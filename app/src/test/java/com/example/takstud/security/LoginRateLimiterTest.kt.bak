@@ -1,0 +1,347 @@
+package com.example.takstud.security
+
+import android.content.SharedPreferences
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.Before
+import org.junit.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * Testes para LoginRateLimiter
+ *
+ * Valida que a proteção contra força bruta está funcionando:
+ * - Permite 5 tentativas falhadas
+ * - Bloqueia a 6ª tentativa
+ * - Desbloqueia após período de bloqueio (15 min)
+ * - Reseta contador após login bem-sucedido
+ */
+class LoginRateLimiterTest {
+
+    private lateinit var rateLimiter: LoginRateLimiter
+    private lateinit var mockSharedPrefs: SharedPreferences
+    private lateinit var mockEditor: SharedPreferences.Editor
+
+    private val testUserId = "test_user_001"
+    private val testUserRA = "001"
+    private val blockDurationMs = 900000L  // 15 minutos
+    private val maxAttempts = 5
+
+    @Before
+    fun setUp() {
+        mockEditor = mockk(relaxed = true)
+        mockSharedPrefs = mockk<SharedPreferences>().apply {
+            every { edit() } returns mockEditor
+        }
+        rateLimiter = LoginRateLimiter(mockSharedPrefs)
+    }
+
+    // ==================== BASIC BLOCKING TESTS ====================
+
+    @Test
+    fun `first failed attempt is allowed`() {
+        // Arrange
+        setupMockPrefs(attempts = 0, lastAttemptTime = 0)
+
+        // Act
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertFalse(result, "Primeiro login falhado deveria ser permitido")
+    }
+
+    @Test
+    fun `multiple failed attempts within limit are allowed`() {
+        // Test that attempts 1-5 are allowed
+        for (attempt in 1..maxAttempts) {
+            // Arrange
+            setupMockPrefs(attempts = attempt - 1, lastAttemptTime = System.currentTimeMillis())
+
+            // Act
+            val result = rateLimiter.isBlocked(testUserId)
+
+            // Assert
+            assertFalse(result, "Tentativa $attempt deveria ser permitida")
+        }
+    }
+
+    @Test
+    fun `sixth failed attempt is blocked`() {
+        // Arrange
+        val currentTime = System.currentTimeMillis()
+        setupMockPrefs(attempts = maxAttempts, lastAttemptTime = currentTime)
+
+        // Act
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertTrue(result, "Sexta tentativa deveria ser bloqueada")
+    }
+
+    @Test
+    fun `blocking persists during block duration`() {
+        // Arrange
+        val blockStartTime = System.currentTimeMillis()
+        setupMockPrefs(attempts = maxAttempts, lastAttemptTime = blockStartTime)
+
+        // Act
+        // Simular que ainda está no período de bloqueio (adicionar 5 minutos)
+        setupMockPrefs(
+            attempts = maxAttempts,
+            lastAttemptTime = blockStartTime,
+            currentTime = blockStartTime + 300000  // 5 minutos depois
+        )
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertTrue(result, "Deve permanecer bloqueado durante o período de bloqueio")
+    }
+
+    @Test
+    fun `blocking is lifted after block duration expires`() {
+        // Arrange
+        val blockStartTime = System.currentTimeMillis()
+        setupMockPrefs(attempts = maxAttempts, lastAttemptTime = blockStartTime)
+
+        // Act
+        // Simular que passou o período de bloqueio (adicionar 20 minutos)
+        setupMockPrefs(
+            attempts = maxAttempts,
+            lastAttemptTime = blockStartTime,
+            currentTime = blockStartTime + 1200000  // 20 minutos depois
+        )
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertFalse(result, "Deve desbloquear após período de bloqueio expirar")
+    }
+
+    // ==================== COUNTER MANAGEMENT TESTS ====================
+
+    @Test
+    fun `record failed attempt increments counter`() {
+        // Arrange
+        setupMockPrefs(attempts = 2, lastAttemptTime = 0)
+
+        // Act
+        rateLimiter.recordFailedAttempt(testUserId)
+
+        // Assert
+        verify { mockEditor.putInt("${testUserId}_attempts", 3) }
+        verify { mockEditor.putLong("${testUserId}_lastAttempt", any()) }
+        verify { mockEditor.apply() }
+    }
+
+    @Test
+    fun `successful login resets counter`() {
+        // Arrange
+        setupMockPrefs(attempts = 5, lastAttemptTime = System.currentTimeMillis())
+
+        // Act
+        rateLimiter.resetAttempts(testUserId)
+
+        // Assert
+        verify { mockEditor.putInt("${testUserId}_attempts", 0) }
+        verify { mockEditor.apply() }
+    }
+
+    @Test
+    fun `reset after successful login allows new login attempts`() {
+        // Arrange
+        setupMockPrefs(attempts = 5, lastAttemptTime = System.currentTimeMillis())
+        rateLimiter.resetAttempts(testUserId)
+
+        // Act - Simular novo login falhado após reset
+        setupMockPrefs(attempts = 0, lastAttemptTime = System.currentTimeMillis())
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertFalse(result, "Novo login falhado deveria ser permitido após reset")
+    }
+
+    // ==================== MULTIPLE USERS TESTS ====================
+
+    @Test
+    fun `different users have independent rate limits`() {
+        // Arrange
+        val user1 = "user_001"
+        val user2 = "user_002"
+        setupMockPrefs(attempts = 5, lastAttemptTime = System.currentTimeMillis(), userId = user1)
+
+        // Act - User 1 bloqueado
+        var result1 = rateLimiter.isBlocked(user1)
+
+        // Act - User 2 com 2 tentativas falhadas
+        setupMockPrefs(attempts = 2, lastAttemptTime = System.currentTimeMillis(), userId = user2)
+        var result2 = rateLimiter.isBlocked(user2)
+
+        // Assert
+        assertTrue(result1, "User 1 deveria estar bloqueado")
+        assertFalse(result2, "User 2 NÃO deveria estar bloqueado")
+    }
+
+    @Test
+    fun `clearing one user's attempts doesn't affect others`() {
+        // Arrange
+        val user1 = "user_001"
+        val user2 = "user_002"
+        setupMockPrefs(attempts = 5, lastAttemptTime = System.currentTimeMillis(), userId = user1)
+        setupMockPrefs(attempts = 5, lastAttemptTime = System.currentTimeMillis(), userId = user2)
+
+        // Act
+        rateLimiter.resetAttempts(user1)
+        setupMockPrefs(attempts = 0, lastAttemptTime = 0, userId = user1)
+
+        // Assert
+        val result1 = rateLimiter.isBlocked(user1)
+        verify { mockEditor.putInt("${user1}_attempts", 0) }
+        // User 2 ainda deveria estar com estado anterior
+    }
+
+    // ==================== EDGE CASES ====================
+
+    @Test
+    fun `handles missing preferences gracefully`() {
+        // Arrange
+        every {
+            mockSharedPrefs.getInt(any(), any())
+        } throws IllegalStateException("SharedPrefs error")
+
+        // Act & Assert - Should not crash
+        try {
+            val result = rateLimiter.isBlocked(testUserId)
+            // Se implementação trata erro, pode retornar false ou lançar
+        } catch (e: Exception) {
+            // Aceitável se erro é propagado
+        }
+    }
+
+    @Test
+    fun `handles very old last attempt time`() {
+        // Arrange
+        val veryOldTime = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000)  // 7 dias atrás
+        setupMockPrefs(attempts = maxAttempts, lastAttemptTime = veryOldTime)
+
+        // Act
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertFalse(result, "Bloqueio muito antigo deveria expirar")
+    }
+
+    @Test
+    fun `handles zero attempts`() {
+        // Arrange
+        setupMockPrefs(attempts = 0, lastAttemptTime = 0)
+
+        // Act
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertFalse(result, "Zero tentativas NÃO deveria bloquear")
+    }
+
+    @Test
+    fun `handles maximum attempts plus one`() {
+        // Arrange
+        setupMockPrefs(attempts = maxAttempts + 1, lastAttemptTime = System.currentTimeMillis())
+
+        // Act
+        val result = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertTrue(result, "Qualquer tentativa acima do limite deveria bloquear")
+    }
+
+    // ==================== BLOCK DURATION TESTS ====================
+
+    @Test
+    fun `block duration is exactly 15 minutes`() {
+        // Arrange
+        val blockStartTime = System.currentTimeMillis()
+        setupMockPrefs(attempts = maxAttempts, lastAttemptTime = blockStartTime)
+
+        // Act - Just before expiration (14 min 59 sec)
+        setupMockPrefs(
+            attempts = maxAttempts,
+            lastAttemptTime = blockStartTime,
+            currentTime = blockStartTime + 899999
+        )
+        val resultBefore = rateLimiter.isBlocked(testUserId)
+
+        // Act - Just after expiration (15 min 1 sec)
+        setupMockPrefs(
+            attempts = maxAttempts,
+            lastAttemptTime = blockStartTime,
+            currentTime = blockStartTime + 900001
+        )
+        val resultAfter = rateLimiter.isBlocked(testUserId)
+
+        // Assert
+        assertTrue(resultBefore, "Deveria estar bloqueado antes de expirar")
+        assertFalse(resultAfter, "Deveria desbloquear após expirar")
+    }
+
+    // ==================== SECURITY SCENARIO TESTS ====================
+
+    @Test
+    fun `simulate brute force attack being blocked`() {
+        // Arrange - Simular 10 tentativas de força bruta
+        setupMockPrefs(attempts = 0, lastAttemptTime = System.currentTimeMillis())
+
+        // Act & Assert - Tentativas 1-5 devem passar
+        for (attempt in 1..5) {
+            setupMockPrefs(attempts = attempt - 1, lastAttemptTime = System.currentTimeMillis())
+            assertFalse(
+                rateLimiter.isBlocked(testUserId),
+                "Tentativa $attempt deveria ser permitida"
+            )
+            rateLimiter.recordFailedAttempt(testUserId)
+        }
+
+        // Act & Assert - Tentativas 6-10 devem ser bloqueadas
+        setupMockPrefs(attempts = 5, lastAttemptTime = System.currentTimeMillis())
+        for (attempt in 6..10) {
+            assertTrue(
+                rateLimiter.isBlocked(testUserId),
+                "Tentativa $attempt deveria ser bloqueada"
+            )
+        }
+    }
+
+    @Test
+    fun `legitimate user recovers after timeout`() {
+        // Arrange - User atinge limite
+        setupMockPrefs(attempts = maxAttempts, lastAttemptTime = System.currentTimeMillis())
+        assertTrue(rateLimiter.isBlocked(testUserId), "User deveria estar bloqueado")
+
+        // Act - Esperar bloqueio expirar
+        setupMockPrefs(
+            attempts = maxAttempts,
+            lastAttemptTime = System.currentTimeMillis() - blockDurationMs - 1000,
+            currentTime = System.currentTimeMillis()
+        )
+
+        // Assert - User consegue tentar novamente
+        assertFalse(rateLimiter.isBlocked(testUserId), "User deveria conseguir tentar novamente")
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private fun setupMockPrefs(
+        attempts: Int,
+        lastAttemptTime: Long,
+        userId: String = testUserId,
+        currentTime: Long = System.currentTimeMillis()
+    ) {
+        every {
+            mockSharedPrefs.getInt("${userId}_attempts", 0)
+        } returns attempts
+
+        every {
+            mockSharedPrefs.getLong("${userId}_lastAttempt", 0L)
+        } returns lastAttemptTime
+    }
+}

@@ -1,0 +1,419 @@
+package com.example.takstud.sync
+
+import com.example.takstud.model.AttendanceRecord
+import com.example.takstud.model.Grade
+import com.example.takstud.model.Notice
+import com.example.takstud.model.Task
+import org.junit.Before
+import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * Testes para SyncManagerImproved
+ *
+ * Valida:
+ * - Sincronização bidirecional (upload/download)
+ * - Resolução de conflitos Last-Write-Wins
+ * - Detecção de duplicatas
+ * - Batch operations
+ */
+class SyncManagerImprovedTest {
+
+    private lateinit var syncManager: SyncManagerImproved
+    private val task1 = Task(
+        id = "task_001",
+        title = "Prova de Matemática",
+        description = "Capítulo 1-3",
+        dueDate = "2025-11-20",
+        studentClass = "6A",
+        lastModified = 1000000L
+    )
+
+    private val task2 = Task(
+        id = "task_002",
+        title = "Trabalho de Português",
+        description = "Leitura",
+        dueDate = "2025-11-22",
+        studentClass = "6A",
+        lastModified = 1000000L
+    )
+
+    @Before
+    fun setUp() {
+        syncManager = SyncManagerImproved
+    }
+
+    // ==================== SYNC DECISION TESTS ====================
+
+    @Test
+    fun `sync state decides UPLOAD when local is newer`() {
+        // Arrange
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 2000000L,    // Mais recente
+            lastModifiedRemote = 1000000L
+        )
+
+        // Act
+        val decision = syncState.decideSyncAction()
+
+        // Assert
+        assertEquals(SyncManagerImproved.SyncDecision.UPLOAD, decision)
+    }
+
+    @Test
+    fun `sync state decides DOWNLOAD when remote is newer`() {
+        // Arrange
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1000000L,
+            lastModifiedRemote = 2000000L    // Mais recente
+        )
+
+        // Act
+        val decision = syncState.decideSyncAction()
+
+        // Assert
+        assertEquals(SyncManagerImproved.SyncDecision.DOWNLOAD, decision)
+    }
+
+    @Test
+    fun `sync state decides SKIP when timestamps are equal`() {
+        // Arrange
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1000000L,
+            lastModifiedRemote = 1000000L    // Iguais
+        )
+
+        // Act
+        val decision = syncState.decideSyncAction()
+
+        // Assert
+        assertEquals(SyncManagerImproved.SyncDecision.SKIP, decision)
+    }
+
+    @Test
+    fun `sync state decides UPLOAD when local is much newer`() {
+        // Arrange
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = System.currentTimeMillis(),  // Agora
+            lastModifiedRemote = 1000000L                    // Há muito tempo
+        )
+
+        // Act
+        val decision = syncState.decideSyncAction()
+
+        // Assert
+        assertEquals(SyncManagerImproved.SyncDecision.UPLOAD, decision)
+    }
+
+    // ==================== CONFLICT RESOLUTION TESTS ====================
+
+    @Test
+    fun `conflict resolution chooses local when newer`() {
+        // Arrange
+        val local = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 2000000L,    // Mais recente
+            lastModifiedRemote = 1000000L
+        )
+        val remote = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1000000L,
+            lastModifiedRemote = 1500000L
+        )
+
+        // Act
+        val resolved = syncManager.resolveConflict(local, remote)
+
+        // Assert
+        assertEquals(local.id, resolved.id)
+        assertTrue(resolved.isSynced)
+    }
+
+    @Test
+    fun `conflict resolution chooses remote when newer`() {
+        // Arrange
+        val local = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1000000L,
+            lastModifiedRemote = 1500000L
+        )
+        val remote = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1500000L,
+            lastModifiedRemote = 2000000L    // Mais recente
+        )
+
+        // Act
+        val resolved = syncManager.resolveConflict(local, remote)
+
+        // Assert
+        assertEquals(remote.id, resolved.id)
+        assertTrue(resolved.isSynced)
+    }
+
+    @Test
+    fun `conflict resolution with equal timestamps chooses local`() {
+        // Arrange
+        val local = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1000000L,
+            lastModifiedRemote = 1000000L    // Iguais
+        )
+        val remote = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = 1000000L,
+            lastModifiedRemote = 1000000L
+        )
+
+        // Act
+        val resolved = syncManager.resolveConflict(local, remote)
+
+        // Assert
+        assertEquals(local.id, resolved.id)
+        assertTrue(resolved.isSynced)
+    }
+
+    // ==================== DUPLICATE DETECTION TESTS ====================
+
+    @Test
+    fun `duplicate attendance detection uses student_date combo`() {
+        // Arrange
+        val record1 = AttendanceRecord(
+            id = "001_2025-11-13",  // Formato: studentId_date
+            studentId = "001",
+            date = "2025-11-13",
+            isPresent = true
+        )
+        val record2 = AttendanceRecord(
+            id = "001_2025-11-13",  // Mesmo ID = duplicata
+            studentId = "001",
+            date = "2025-11-13",
+            isPresent = true
+        )
+
+        // Act
+        val isSameId = record1.id == record2.id
+
+        // Assert
+        assertTrue(isSameId, "IDs iguais indicam registros duplicados")
+    }
+
+    @Test
+    fun `different students same date have different IDs`() {
+        // Arrange
+        val record1 = AttendanceRecord(
+            id = "001_2025-11-13",
+            studentId = "001",
+            date = "2025-11-13",
+            isPresent = true
+        )
+        val record2 = AttendanceRecord(
+            id = "002_2025-11-13",
+            studentId = "002",
+            date = "2025-11-13",
+            isPresent = true
+        )
+
+        // Act
+        val isDifferent = record1.id != record2.id
+
+        // Assert
+        assertTrue(isDifferent, "Registros de alunos diferentes devem ter IDs diferentes")
+    }
+
+    @Test
+    fun `same student different date have different IDs`() {
+        // Arrange
+        val record1 = AttendanceRecord(
+            id = "001_2025-11-13",
+            studentId = "001",
+            date = "2025-11-13",
+            isPresent = true
+        )
+        val record2 = AttendanceRecord(
+            id = "001_2025-11-14",
+            studentId = "001",
+            date = "2025-11-14",
+            isPresent = true
+        )
+
+        // Act
+        val isDifferent = record1.id != record2.id
+
+        // Assert
+        assertTrue(isDifferent, "Registros de datas diferentes devem ter IDs diferentes")
+    }
+
+    // ==================== SYNC STATE TESTS ====================
+
+    @Test
+    fun `sync state tracks modification time correctly`() {
+        // Arrange
+        val oneMinuteAgo = System.currentTimeMillis() - 60000
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = oneMinuteAgo,
+            lastModifiedRemote = oneMinuteAgo
+        )
+
+        // Act
+        val minutesSince = syncState.minutesSinceModification()
+
+        // Assert
+        assertTrue(minutesSince >= 1, "Deve ter pelo menos 1 minuto")
+        assertTrue(minutesSince < 2, "Não deve ter mais de 2 minutos")
+    }
+
+    @Test
+    fun `sync state marks as synced with no error`() {
+        // Arrange
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = System.currentTimeMillis(),
+            lastModifiedRemote = System.currentTimeMillis(),
+            isSynced = true,
+            syncAttempts = 0,
+            lastSyncError = null
+        )
+
+        // Act & Assert
+        assertTrue(syncState.isSynced)
+        assertEquals(0, syncState.syncAttempts)
+        assertEquals(null, syncState.lastSyncError)
+    }
+
+    @Test
+    fun `sync state tracks errors`() {
+        // Arrange
+        val errorMsg = "Connection timeout"
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = System.currentTimeMillis(),
+            lastModifiedRemote = 0L,
+            isSynced = false,
+            syncAttempts = 1,
+            lastSyncError = errorMsg
+        )
+
+        // Act & Assert
+        assertFalse(syncState.isSynced)
+        assertEquals(1, syncState.syncAttempts)
+        assertEquals(errorMsg, syncState.lastSyncError)
+    }
+
+    // ==================== SYNC STATS TESTS ====================
+
+    @Test
+    fun `sync stats records correctly`() {
+        // Arrange
+        syncManager.recordSyncStats(
+            collectionName = "tasks",
+            synced = 10,
+            failed = 2,
+            conflicts = 1,
+            uploads = 8,
+            downloads = 2
+        )
+
+        // Act
+        val stats = syncManager.getSyncStats("tasks")
+
+        // Assert
+        assertTrue(stats.containsKey("tasks"))
+        val taskStats = stats["tasks"]!!
+        assertEquals(10, taskStats.totalSynced)
+        assertEquals(2, taskStats.totalFailed)
+        assertEquals(1, taskStats.totalConflicts)
+        assertEquals(8, taskStats.totalUploads)
+        assertEquals(2, taskStats.totalDownloads)
+    }
+
+    @Test
+    fun `sync stats can be retrieved for all collections`() {
+        // Arrange
+        syncManager.recordSyncStats("tasks", 10, 1, 0, 10, 0)
+        syncManager.recordSyncStats("grades", 5, 0, 0, 5, 0)
+        syncManager.recordSyncStats("notices", 3, 2, 1, 1, 2)
+
+        // Act
+        val allStats = syncManager.getSyncStats(null)
+
+        // Assert
+        assertEquals(3, allStats.size)
+        assertTrue(allStats.containsKey("tasks"))
+        assertTrue(allStats.containsKey("grades"))
+        assertTrue(allStats.containsKey("notices"))
+    }
+
+    // ==================== REALISTIC SCENARIOS ====================
+
+    @Test
+    fun `scenario - user edits task offline then syncs`() {
+        // Arrange - Task foi modificada localmente
+        val localTimestamp = System.currentTimeMillis()
+        val remoteTimestamp = localTimestamp - 60000  // 1 min atrás
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = localTimestamp,
+            lastModifiedRemote = remoteTimestamp
+        )
+
+        // Act
+        val decision = syncState.decideSyncAction()
+
+        // Assert
+        assertEquals(SyncManagerImproved.SyncDecision.UPLOAD, decision,
+            "Mudança local recente deveria fazer upload")
+    }
+
+    @Test
+    fun `scenario - server updates while app is offline`() {
+        // Arrange - Task no servidor é mais recente
+        val remoteTimestamp = System.currentTimeMillis()
+        val localTimestamp = remoteTimestamp - 300000  // 5 min atrás
+        val syncState = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = localTimestamp,
+            lastModifiedRemote = remoteTimestamp
+        )
+
+        // Act
+        val decision = syncState.decideSyncAction()
+
+        // Assert
+        assertEquals(SyncManagerImproved.SyncDecision.DOWNLOAD, decision,
+            "Mudança remota recente deveria fazer download")
+    }
+
+    @Test
+    fun `scenario - concurrent edits resolved by timestamp`() {
+        // Arrange - Dois usuários editam o mesmo task simultaneamente
+        val teacherLocalTimestamp = 1700000000000L  // Professor editou
+        val otherLocalTimestamp = 1699999999999L    // Outro usuário editou ligeiramente antes
+
+        val syncState1 = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = teacherLocalTimestamp,
+            lastModifiedRemote = 1699999999000L
+        )
+
+        val syncState2 = SyncManagerImproved.SyncState(
+            id = "task_001",
+            lastModifiedLocal = otherLocalTimestamp,
+            lastModifiedRemote = 1699999999000L
+        )
+
+        // Act
+        val resolved = syncManager.resolveConflict(syncState1, syncState2)
+
+        // Assert
+        assertEquals(syncState1.id, resolved.id,
+            "Versão do professor (mais recente) deveria ganhar")
+    }
+}

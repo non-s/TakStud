@@ -1,0 +1,376 @@
+/**
+ * FIRESTORE SECURITY RULES - TakStud
+ *
+ * Implementa controle de acesso baseado em roles (RBAC) e relacionamentos
+ * Protege dados sensíveis de alunos, responsáveis e professores
+ *
+ * Versão: 1.0
+ * Data: 13/11/2025
+ *
+ * IMPORTANTE: Essas regras devem ser publicadas no Firebase Console
+ * Console: https://console.firebase.google.com -> Firestore Database -> Rules
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==================== HELPER FUNCTIONS ====================
+
+    /**
+     * Verifica se o usuário está autenticado
+     */
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /**
+     * Obtém o user ID do token JWT
+     */
+    function getUserId() {
+      return request.auth.uid;
+    }
+
+    /**
+     * Obtém dados do documento de usuário
+     */
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(getUserId())).data;
+    }
+
+    /**
+     * Verifica se o usuário tem uma role específica
+     */
+    function hasRole(role) {
+      return getUserData().role == role;
+    }
+
+    /**
+     * Verifica se o usuário é admin
+     */
+    function isAdmin() {
+      return hasRole('ADMIN');
+    }
+
+    /**
+     * Verifica se o usuário é professor
+     */
+    function isTeacher() {
+      return hasRole('TEACHER');
+    }
+
+    /**
+     * Verifica se o usuário é responsável
+     */
+    function isParent() {
+      return hasRole('PARENT');
+    }
+
+    /**
+     * Verifica se parent é responsável de um estudante
+     */
+    function isParentOf(studentId) {
+      return isParent() &&
+             getUserData().studentIds.size() > 0 &&
+             studentId in getUserData().studentIds;
+    }
+
+    /**
+     * Verifica se teacher leciona uma turma
+     */
+    function teachesClass(className) {
+      return isTeacher() &&
+             getUserData().classes.size() > 0 &&
+             className in getUserData().classes;
+    }
+
+    /**
+     * Valida formato de RA (ex: "001", "002")
+     */
+    function isValidRA(ra) {
+      return ra.size() > 0 && ra.size() <= 10;
+    }
+
+    /**
+     * Valida email básico
+     */
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    // ==================== USERS COLLECTION ====================
+
+    /**
+     * Documento de usuário armazena perfil, role e relacionamentos
+     */
+    match /users/{userId} {
+      // Leitura: Cada usuário lê seu próprio perfil
+      allow read: if isAuthenticated() && getUserId() == userId;
+
+      // Escrita: Apenas admin cria/atualiza usuários
+      allow write: if isAdmin();
+    }
+
+    // ==================== STUDENTS COLLECTION ====================
+
+    /**
+     * Alunos - dados sensíveis que precisam ser protegidos
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Lê alunos de suas turmas
+     * - PARENT: Lê apenas seus próprios filhos
+     */
+    match /students/{studentId} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(resource.data.studentClass)) ||
+        (isParent() && isParentOf(studentId))
+      );
+
+      // ESCRITA (criar/atualizar)
+      allow write: if isAdmin();
+
+      // DELEÇÃO
+      allow delete: if isAdmin();
+
+      // Validar dados ao escrever
+      allow create, update: if isAdmin() && validateStudentData(request.resource.data);
+    }
+
+    /**
+     * Valida dados de estudante
+     */
+    function validateStudentData(data) {
+      return data.ra != null && isValidRA(data.ra) &&
+             data.name != null && data.name.size() > 0 &&
+             data.studentClass != null &&
+             data.guardianEmail == null || isValidEmail(data.guardianEmail);
+    }
+
+    // ==================== TASKS COLLECTION ====================
+
+    /**
+     * Tarefas e provas
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Cria/atualiza suas próprias tarefas
+     * - TEACHER: Lê tarefas de suas turmas
+     * - PARENT: Lê tarefas de suas turmas (via student)
+     */
+    match /tasks/{taskId} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(resource.data.studentClass)) ||
+        (isParent() && exists(/databases/$(database)/documents/students/$(resource.data.studentId)) &&
+         isParentOf(resource.data.studentId))
+      );
+
+      // CRIAR: Only teachers/admin
+      allow create: if (isAdmin() || isTeacher()) &&
+                       validateTaskData(request.resource.data);
+
+      // ATUALIZAR: Owner + teachers + admin
+      allow update: if (isAdmin() || isTeacher()) &&
+                       validateTaskData(request.resource.data);
+
+      // DELETAR: Admin only
+      allow delete: if isAdmin();
+    }
+
+    function validateTaskData(data) {
+      return data.title != null && data.title.size() > 0 &&
+             data.description != null &&
+             data.dueDate != null &&
+             data.studentClass != null;
+    }
+
+    // ==================== ATTENDANCE COLLECTION ====================
+
+    /**
+     * Registros de presença
+     *
+     * CRÍTICO: Evitar duplicatas com índice composto
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Registra presença de seus alunos
+     * - PARENT: Lê presença de seus filhos (read-only)
+     */
+    match /attendance/{recordId} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(resource.data.studentClass)) ||
+        (isParent() && isParentOf(resource.data.studentId))
+      );
+
+      // CRIAR/ATUALIZAR: Teachers + admin
+      allow create, update: if (isAdmin() || isTeacher()) &&
+                             validateAttendanceData(request.resource.data);
+
+      // DELETAR: Admin only
+      allow delete: if isAdmin();
+    }
+
+    function validateAttendanceData(data) {
+      return data.studentId != null &&
+             data.date != null &&
+             data.isPresent != null &&
+             data.studentClass != null;
+    }
+
+    // ==================== GRADES COLLECTION ====================
+
+    /**
+     * Notas dos alunos
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Registra notas de seus alunos
+     * - PARENT: Lê notas de seus filhos
+     */
+    match /grades/{gradeId} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(resource.data.studentClass)) ||
+        (isParent() && isParentOf(resource.data.studentId))
+      );
+
+      // CRIAR/ATUALIZAR: Teachers + admin
+      allow create, update: if (isAdmin() || isTeacher()) &&
+                             validateGradeData(request.resource.data);
+
+      // DELETAR: Admin only
+      allow delete: if isAdmin();
+    }
+
+    function validateGradeData(data) {
+      return data.studentId != null &&
+             data.taskId != null &&
+             data.score != null && data.score >= 0 && data.score <= 100;
+    }
+
+    // ==================== NOTICES COLLECTION ====================
+
+    /**
+     * Avisos dos professores
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Cria/atualiza avisos de suas turmas
+     * - PARENT: Lê avisos de suas turmas
+     */
+    match /notices/{noticeId} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(resource.data.studentClass)) ||
+        (isParent() && exists(/databases/$(database)/documents/classes/$(resource.data.studentClass)) &&
+         get(/databases/$(database)/documents/classes/$(resource.data.studentClass)).data.students.size() > 0)
+      );
+
+      // CRIAR/ATUALIZAR: Teachers + admin
+      allow create, update: if (isAdmin() || isTeacher()) &&
+                             validateNoticeData(request.resource.data);
+
+      // DELETAR: Creator + admin
+      allow delete: if isAdmin();
+    }
+
+    function validateNoticeData(data) {
+      return data.title != null && data.title.size() > 0 &&
+             data.description != null &&
+             data.studentClass != null;
+    }
+
+    // ==================== SCHEDULES COLLECTION ====================
+
+    /**
+     * Horários de aula
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Lê horários de suas turmas
+     * - PARENT: Lê horários de suas turmas (via seus filhos)
+     */
+    match /schedules/{scheduleId} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(resource.data.studentClass)) ||
+        (isParent() && exists(/databases/$(database)/documents/students/$(resource.data.studentId)) &&
+         isParentOf(resource.data.studentId))
+      );
+
+      // ESCRITA: Admin only
+      allow write: if isAdmin();
+    }
+
+    // ==================== CLASSES COLLECTION ====================
+
+    /**
+     * Turmas (gerenciar relacionamento teacher-class)
+     *
+     * Acesso:
+     * - ADMIN: Lê/escreve tudo
+     * - TEACHER: Lê suas turmas
+     * - PARENT: Lê turmas de seus filhos
+     */
+    match /classes/{className} {
+      // LEITURA
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isTeacher() && teachesClass(className)) ||
+        (isParent())  // Parents podem listar classes para referência
+      );
+
+      // ESCRITA: Admin only
+      allow write: if isAdmin();
+    }
+
+    // ==================== SYNC_QUEUE COLLECTION ====================
+
+    /**
+     * Fila de sincronização para offline mode
+     *
+     * Acesso: Apenas owner pode acessar sua própria fila
+     */
+    match /syncQueue/{userId}/{queueId} {
+      allow read, write: if isAuthenticated() && getUserId() == userId;
+    }
+
+    // ==================== AUDIT_LOGS COLLECTION ====================
+
+    /**
+     * Logs de auditoria (append-only para segurança)
+     *
+     * Acesso:
+     * - ADMIN: Lê logs
+     * - Ninguém pode deletar (exceto admin via console)
+     */
+    match /auditLogs/{logId} {
+      // Apenas admin lê logs
+      allow read: if isAdmin();
+
+      // Append-only: pode criar mas não modificar
+      allow create: if true;  // Backend escreve via credentials admin
+
+      // Nunca permite update ou delete (para manter integridade)
+      allow update, delete: if false;
+    }
+
+    // ==================== CATCH-ALL ====================
+
+    /**
+     * Negação padrão: tudo que não foi permitido acima é recusado
+     */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

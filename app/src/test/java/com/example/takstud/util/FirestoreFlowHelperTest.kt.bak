@@ -56,9 +56,10 @@ class FirestoreFlowHelperTest {
             id = id,
             title = title,
             description = "Description",
-            dueDate = System.currentTimeMillis(),
+            dueDate = "25/12/2025",
             studentClass = "6A",
-            createdAt = System.currentTimeMillis()
+            createdAt = System.currentTimeMillis(),
+            modifiedAt = System.currentTimeMillis()
         )
     }
 
@@ -67,9 +68,11 @@ class FirestoreFlowHelperTest {
             id = id,
             taskId = "task_001",
             studentId = "student_001",
+            studentRa = "RA001",
             score = score,
-            classId = "class_6A",
-            releaseDate = System.currentTimeMillis()
+            value = score,
+            createdAt = System.currentTimeMillis(),
+            modifiedAt = System.currentTimeMillis()
         )
     }
 
