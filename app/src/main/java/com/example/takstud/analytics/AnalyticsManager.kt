@@ -170,11 +170,11 @@ object AnalyticsManager {
     }
 
     fun logSessionStart() {
-        analytics.logEvent("session_start", android.os.Bundle())
+        analytics.logEvent("user_session_started", android.os.Bundle())
     }
 
     fun logSessionEnd() {
-        analytics.logEvent("session_end", android.os.Bundle())
+        analytics.logEvent("user_session_ended", android.os.Bundle())
     }
 
     // ===== Propriedades do Usuário =====
