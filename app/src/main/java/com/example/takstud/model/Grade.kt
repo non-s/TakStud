@@ -147,9 +147,8 @@ package com.example.takstud.model
  * @see Student
  * @see GradeBatchManager
  * @see AdvancedValidator
- * @see TakStudRepository.getGrades
- * @see TakStudRepository.saveGrade
- * @see TakStudRepository.deleteGrade
+ * @see com.example.takstud.data.repository.GradeRepository.getGrades
+ * @see com.example.takstud.data.repository.GradeRepository.saveGrade
  */
 data class Grade(
     val id: String = "",

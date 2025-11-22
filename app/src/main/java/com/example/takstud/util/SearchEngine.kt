@@ -1,6 +1,7 @@
 package com.example.takstud.util
 
 import com.example.takstud.model.*
+import com.example.takstud.model.task.TaskExtended
 import kotlin.math.min
 
 /**
@@ -68,11 +69,14 @@ object SearchEngine {
     /**
      * Busca de tarefas por título ou descrição.
      */
+    /**
+     * Busca de tarefas por título ou descrição.
+     */
     fun searchTasks(
-        tasks: List<Task>,
+        tasks: List<TaskExtended>,
         query: String,
         filters: Map<String, String> = emptyMap()
-    ): List<SearchResult<Task>> {
+    ): List<SearchResult<TaskExtended>> {
         val normalizedQuery = query.lowercase().trim()
         if (normalizedQuery.isEmpty()) return emptyList()
 
@@ -87,7 +91,7 @@ object SearchEngine {
                 // Aplicar filtros
                 filters.all { (key, value) ->
                     when (key) {
-                        "class" -> task.studentClass == value
+                        "class" -> task.className == value || task.classId == value
                         else -> true
                     }
                 }
@@ -352,7 +356,7 @@ object PredefinedFilters {
      * Filtros para tarefas.
      */
     object Tasks {
-        fun byClass(classId: String): (Task) -> Boolean = { it.studentClass == classId }
-        fun overdue(): (Task) -> Boolean = { it.dueDate < System.currentTimeMillis().toString() }
+        fun byClass(classId: String): (TaskExtended) -> Boolean = { it.className == classId || it.classId == classId }
+        fun overdue(): (TaskExtended) -> Boolean = { it.isOverdue() }
     }
 }

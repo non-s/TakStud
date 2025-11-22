@@ -57,7 +57,7 @@ package com.example.takstud.model
  *
  * Relacionamentos:
  * - Vinculado a: Class (via classId)
- * - Possuidor de: Task[] (via queries em TakStudRepository)
+ * - Possuidor de: Task[] (via queries em TaskRepository)
  * - Receptor de: Grade[] (via id em grade.studentId)
  * - Ator de: AttendanceRecord[] (via id)
  *
@@ -165,9 +165,9 @@ package com.example.takstud.model
  * @see LoginRateLimiter
  * @see SecureSessionManager
  * @see AdvancedValidator
- * @see TakStudRepository.getStudents
- * @see TakStudRepository.saveStudent
- * @see TakStudRepository.deleteStudent
+ * @see com.example.takstud.data.repository.StudentRepository.getStudents
+ * @see com.example.takstud.data.repository.StudentRepository.saveStudent
+ * @see com.example.takstud.data.repository.StudentRepository.deleteStudent
  */
 data class Student(
     val id: String = "",

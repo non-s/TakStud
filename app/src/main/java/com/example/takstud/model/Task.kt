@@ -117,9 +117,9 @@ package com.example.takstud.model
  * @see Class
  * @see Grade
  * @see AdvancedValidator
- * @see TakStudRepository.getTasks
- * @see TakStudRepository.saveTask
- * @see TakStudRepository.deleteTask
+ * @see com.example.takstud.data.repository.TaskRepository.getTasks
+ * @see com.example.takstud.data.repository.TaskRepository.saveTask
+ * @see com.example.takstud.data.repository.TaskRepository.deleteTask
  */
 data class Task(
     val id: String = "",

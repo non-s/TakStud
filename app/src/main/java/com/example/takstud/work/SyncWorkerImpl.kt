@@ -7,7 +7,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.takstud.TakStudRepository
+
 import com.example.takstud.offline.OfflineSyncQueue
 import com.example.takstud.sync.SyncManagerImproved
 import kotlinx.coroutines.delay
@@ -60,9 +60,20 @@ import java.util.concurrent.TimeUnit
  * @see ConnectivityMonitor
  * @see SyncManagerImproved
  */
-class SyncWorkerImpl(
-    context: Context,
-    params: WorkerParameters
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import com.example.takstud.data.repository.TaskRepository
+import com.example.takstud.data.repository.AttendanceRepository
+import com.example.takstud.data.repository.GradeRepository
+
+@HiltWorker
+class SyncWorkerImpl @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val taskRepository: TaskRepository,
+    private val attendanceRepository: AttendanceRepository,
+    private val gradeRepository: GradeRepository
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -138,11 +149,8 @@ class SyncWorkerImpl(
         return try {
             Log.i(TAG, "📤 Iniciando sincronização...")
 
-            // Simular obtenção de dependencies (em produção usar DI)
-            val repository = TakStudRepository()
+            // Simular obtenção de dependencies (Injetado via Hilt)
             val syncManager = SyncManagerImproved
-            // val offlineQueue = getOfflineSyncQueue() // Injetar via DI
-            // val connectivity = getConnectivityMonitor() // Injetar via DI
 
             // Verificar conectividade antes de sincronizar
             val hasInternet = checkConnectivity()
@@ -155,7 +163,7 @@ class SyncWorkerImpl(
             Log.i(TAG, "Processando fila de sincronização...")
 
             // Simular processamento de alguns tipos de entidade
-            syncSomeData(repository, syncManager)
+            syncSomeData(syncManager)
 
             Log.i(TAG, "✅ Sincronização completa com sucesso!")
             Result.success()
@@ -195,7 +203,6 @@ class SyncWorkerImpl(
      * Em produção, isso seria feito via DAO/Repository.
      */
     private suspend fun syncSomeData(
-        repository: TakStudRepository,
         syncManager: SyncManagerImproved
     ) {
         try {

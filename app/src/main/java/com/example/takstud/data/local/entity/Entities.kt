@@ -4,20 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Index
 
-/**
- * TaskEntity - Room entity para armazenar tarefas localmente
- */
-@Entity(tableName = "tasks", indices = [Index("studentClass")])
-data class TaskEntity(
-    @PrimaryKey val id: String = "",
-    val title: String = "",
-    val studentClass: String = "",
-    val dueDate: String = "",
-    val description: String = "",
-    val createdAt: String = "",
-    val isSynced: Boolean = false,
-    val lastModified: Long = System.currentTimeMillis()
-)
+// TaskEntity moved to TaskEntities.kt
 
 /**
  * NoticeEntity - Room entity para armazenar avisos localmente
@@ -46,19 +33,7 @@ data class ScheduleEntity(
     val lastModified: Long = System.currentTimeMillis()
 )
 
-/**
- * StudentEntity - Room entity para armazenar alunos localmente
- */
-@Entity(tableName = "students", indices = [Index("ra"), Index("studentClass"), Index("classId")])
-data class StudentEntity(
-    @PrimaryKey val id: String = "",
-    val name: String = "",
-    val ra: String = "",
-    val studentClass: String = "",
-    val classId: String = "",
-    val isSynced: Boolean = false,
-    val lastModified: Long = System.currentTimeMillis()
-)
+// StudentEntity moved to StudentEntities.kt
 
 /**
  * GradeEntity - Room entity para armazenar notas localmente

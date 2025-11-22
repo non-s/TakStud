@@ -1,0 +1,39 @@
+package com.example.takstud.di
+
+import com.example.takstud.data.local.dao.*
+import com.example.takstud.data.repository.ScheduleRepository
+import com.example.takstud.data.repository.StudentRepository
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+/**
+ * 💉 Módulo de Injeção de Dependências - Repositories
+ * Fornece instâncias dos Repositories
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun provideStudentRepository(
+        studentDao: StudentDao,
+        timelineDao: StudentTimelineDao,
+        statsDao: StudentStatsDao
+    ): StudentRepository {
+        return StudentRepository(studentDao, timelineDao, statsDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideScheduleRepository(
+        classScheduleDao: ClassScheduleDao,
+        timeSlotDao: TimeSlotDao,
+        subjectDao: SubjectDao
+    ): ScheduleRepository {
+        return ScheduleRepository(classScheduleDao, timeSlotDao, subjectDao)
+    }
+}

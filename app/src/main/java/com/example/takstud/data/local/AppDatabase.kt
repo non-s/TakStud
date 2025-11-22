@@ -21,9 +21,15 @@ import com.example.takstud.data.local.entity.*
         StudentEntity::class,
         GradeEntity::class,
         AttendanceEntity::class,
-        SyncQueueEntity::class
+        SyncQueueEntity::class,
+        SubjectEntity::class,
+        TimeSlotEntity::class,
+        ClassScheduleEntity::class,
+        StudentTimelineEventEntity::class,
+        StudentStatsEntity::class,
+        AssessmentEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -35,6 +41,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun gradeDao(): GradeDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun syncQueueDao(): SyncQueueDao
+    abstract fun subjectDao(): SubjectDao
+    abstract fun timeSlotDao(): TimeSlotDao
+    abstract fun classScheduleDao(): ClassScheduleDao
+    abstract fun studentTimelineDao(): StudentTimelineDao
+    abstract fun studentStatsDao(): StudentStatsDao
 
     companion object {
         @Volatile

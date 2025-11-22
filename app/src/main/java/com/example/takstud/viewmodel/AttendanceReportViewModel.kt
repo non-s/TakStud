@@ -1,11 +1,12 @@
 package com.example.takstud.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import com.example.takstud.TakStudRepository
+import com.example.takstud.data.repository.AttendanceRepository
 import com.example.takstud.model.*
 import com.example.takstud.ui.common.BaseViewModel
 import com.example.takstud.ui.common.UiState
 import com.example.takstud.util.AttendanceReportGenerator
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,37 +14,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
 /**
  * AttendanceReportViewModel - Gerencia geração e exibição de relatórios de frequência.
- *
- * FUNCIONALIDADES:
- * - Carregamento de dados de frequência
- * - Geração de relatórios (individual, detalhado, por turma)
- * - Gerenciamento de filtros (período, estudante, turma)
- * - Exportação de dados
- * - Tratamento de erros com retry automático
- *
- * ESTADOS:
- * - Loading: Gerando relatório
- * - Success: Relatório gerado com sucesso
- * - Error: Falha na geração
- * - Empty: Sem dados disponíveis
- *
- * EXEMPLO DE USO:
- * class AttendanceScreen(viewModel: AttendanceReportViewModel) {
- *     val uiState by viewModel.uiState.collectAsState()
- *
- *     when (uiState) {
- *         is UiState.Loading -> CircularProgressIndicator()
- *         is UiState.Success -> DisplayReport((uiState as UiState.Success).data)
- *         is UiState.Error -> ErrorMessage((uiState as UiState.Error).message)
- *         is UiState.Empty -> EmptyState()
- *     }
- * }
  */
-class AttendanceReportViewModel(
-    private val repository: TakStudRepository = TakStudRepository()
+@HiltViewModel
+class AttendanceReportViewModel @Inject constructor(
+    private val repository: AttendanceRepository
 ) : BaseViewModel<AttendanceReport>() {
 
     // Estado específico para relatórios detalhados

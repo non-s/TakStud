@@ -1,42 +1,32 @@
 package com.example.takstud.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import com.example.takstud.TakStudRepository
+import com.example.takstud.data.repository.AttendanceRepository
+import com.example.takstud.data.repository.GradeRepository
+import com.example.takstud.data.repository.StudentRepository
+import com.example.takstud.data.repository.TaskRepository
 import com.example.takstud.model.*
 import com.example.takstud.ui.common.BaseViewModel
 import com.example.takstud.ui.common.UiState
 import com.example.takstud.util.SearchEngine
 import com.example.takstud.util.SearchResult
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * SearchViewModel - Gerencia busca e filtros avançados.
- *
- * FUNCIONALIDADES:
- * - Busca full-text
- * - Busca fuzzy com tolerância a erros
- * - Filtros combinados
- * - Histórico de buscas
- * - Resultados com relevância
- *
- * TIPOS DE BUSCA:
- * - Students: por nome ou RA
- * - Tasks: por título ou descrição
- * - Grades: por estudante ou tarefa
- * - Attendance: por estudante ou data
- * - Notices: por título ou conteúdo
- *
- * EXEMPLO DE USO:
- * val viewModel = SearchViewModel(context)
- * viewModel.searchStudents("João Silva")
- * val results by viewModel.studentResults.collectAsState()
  */
-class SearchViewModel(
-    private val repository: TakStudRepository = TakStudRepository()
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val taskRepository: TaskRepository,
+    private val studentRepository: StudentRepository,
+    private val gradeRepository: GradeRepository,
+    private val attendanceRepository: AttendanceRepository
 ) : BaseViewModel<List<Any>>() {
 
     // Resultados de busca por tipo
@@ -84,9 +74,9 @@ class SearchViewModel(
             _searchMode.value = SearchMode.STUDENTS
             _studentResults.value = UiState.Loading(null, "Buscando estudantes...")
 
-            val students = repository.getTasks().first()  // Placeholder - would get students
+            val students = studentRepository.getStudents().first()
             val results = SearchEngine.searchStudents(
-                students = emptyList(),  // Would fetch from repository
+                students = students,
                 query = query,
                 filters = _currentFilters.value
             )
@@ -117,9 +107,13 @@ class SearchViewModel(
             _searchMode.value = SearchMode.TASKS
             _taskResults.value = UiState.Loading(null, "Buscando tarefas...")
 
-            val tasks = repository.getTasks().first()
+            val tasks = taskRepository.getTasks().first()
+            // Adaptador temporário se SearchEngine ainda esperar Task antigo, 
+            // ou atualizar SearchEngine. Por enquanto, vamos assumir que SearchEngine precisa ser atualizado também.
+            // Mas como SearchEngine não foi migrado ainda, vamos fazer um map simples se necessário ou atualizar SearchEngine.
+            // Vamos atualizar SearchEngine no próximo passo.
             val results = SearchEngine.searchTasks(
-                tasks = tasks,
+                tasks = tasks, // Isso vai quebrar se SearchEngine esperar List<Task>
                 query = query,
                 filters = _currentFilters.value
             )
@@ -150,9 +144,9 @@ class SearchViewModel(
             _searchMode.value = SearchMode.GRADES
             _gradeResults.value = UiState.Loading(null, "Buscando notas...")
 
-            // Would fetch grades from repository
+            val grades = gradeRepository.getGrades().first()
             val results = SearchEngine.searchGrades(
-                grades = emptyList(),
+                grades = grades,
                 query = query,
                 filters = _currentFilters.value
             )
@@ -183,7 +177,7 @@ class SearchViewModel(
             _searchMode.value = SearchMode.ATTENDANCE
             _attendanceResults.value = UiState.Loading(null, "Buscando frequência...")
 
-            val records = repository.getAttendanceRecords().first()
+            val records = attendanceRepository.getAttendanceRecords().first()
             val results = SearchEngine.searchAttendance(
                 records = records,
                 query = query,

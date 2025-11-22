@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.initialize
+import dagger.hilt.android.HiltAndroidApp
 
 /**
  * Application class para TakStud.
@@ -12,10 +13,35 @@ import com.google.firebase.initialize
  * - Inicializar Firebase e dependências globais
  * - Configurar logging
  * - Inicializar WorkManager para tarefas em background
+ * - Hilt para injeção de dependências
  *
  * Esta classe é carregada antes da MainActivity e do primeiro Activity.
  */
-class TakStudApplication : Application() {
+import androidx.work.Configuration
+import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
+
+/**
+ * Application class para TakStud.
+ *
+ * Responsabilidades:
+ * - Inicializar Firebase e dependências globais
+ * - Configurar logging
+ * - Inicializar WorkManager para tarefas em background
+ * - Hilt para injeção de dependências
+ *
+ * Esta classe é carregada antes da MainActivity e do primeiro Activity.
+ */
+@HiltAndroidApp
+class TakStudApplication : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: androidx.hilt.work.HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     companion object {
         private const val TAG = "TakStudApp"

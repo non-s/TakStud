@@ -1,381 +1,104 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.takstud.ui.admin
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.takstud.ui.components.MetricCard
+import com.example.takstud.ui.components.SimpleBarChart
 
-/**
- * AdminDashboardScreen - Dashboard administrativo para gerenciar sistema
- * Acesso apenas com código de admin (58239617)
- */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminDashboardScreen(
-    modifier: Modifier = Modifier,
-    onBack: () -> Unit,
-    onManageTeachers: () -> Unit = {},
-    onManageStudents: () -> Unit = {},
-    onViewReports: () -> Unit = {},
-    onManageSettings: () -> Unit = {}
-) {
+fun AdminDashboardScreen(navController: NavController) {
     Scaffold(
-        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Painel Administrativo") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, "Voltar")
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                     }
                 }
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Cards de Ações Principais
-            item {
-                Text(
-                    text = "Gerenciamento",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                AdminActionCard(
-                    title = "Gerenciar Professores",
-                    subtitle = "Adicionar, editar ou remover professores",
-                    icon = Icons.Default.School,
-                    onClick = onManageTeachers
-                )
-            }
-
-            item {
-                AdminActionCard(
-                    title = "Gerenciar Alunos",
-                    subtitle = "Visualizar e gerenciar todos os alunos",
-                    icon = Icons.Default.Groups,
-                    onClick = onManageStudents
-                )
-            }
-
-            item {
-                AdminActionCard(
-                    title = "Configurações do Sistema",
-                    subtitle = "Ajustar parâmetros e preferências",
-                    icon = Icons.Default.Settings,
-                    onClick = onManageSettings
-                )
-            }
-
-            // Cards de Análise
-            item {
-                Text(
-                    text = "Análise e Relatórios",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-
-            item {
-                AdminActionCard(
-                    title = "Relatórios Completos",
-                    subtitle = "Visualizar dados e estatísticas",
-                    icon = Icons.Default.BarChart,
-                    onClick = onViewReports
-                )
-            }
-
-            // Seção de Status do Sistema
-            item {
-                Text(
-                    text = "Status do Sistema",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-
-            item {
-                SystemStatusCard()
-            }
-
-            // Seção de Informações
-            item {
-                Text(
-                    text = "Informações",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-
-            item {
-                AdminInfoCard(
-                    label = "Versão do App",
-                    value = "1.0",
-                    icon = Icons.Default.Info
-                )
-            }
-
-            item {
-                AdminInfoCard(
-                    label = "Banco de Dados",
-                    value = "Sincronizado",
-                    icon = Icons.Default.Storage,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                AdminInfoCard(
-                    label = "Último Backup",
-                    value = "Hoje às 10:30",
-                    icon = Icons.Default.Backup
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
-
-/**
- * AdminActionCard - Card para ações principais do admin
- */
-@Composable
-fun AdminActionCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp)
-            )
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-            }
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-/**
- * SystemStatusCard - Card com status do sistema
- */
-@Composable
-fun SystemStatusCard(
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium
-    ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text("Visão Geral da Escola", style = MaterialTheme.typography.headlineSmall)
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Status Geral",
-                    style = MaterialTheme.typography.titleSmall
+                MetricCard(
+                    title = "Total Alunos",
+                    value = "450",
+                    modifier = Modifier.weight(1f)
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                ) {
-                    Text(
-                        text = "✓ Online",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(8.dp, 4.dp)
-                    )
-                }
-            }
-
-            Divider()
-
-            SystemStatusItem(
-                label = "Conexão Firebase",
-                status = "Conectado",
-                isHealthy = true
-            )
-
-            SystemStatusItem(
-                label = "Banco de Dados Local",
-                status = "Operacional",
-                isHealthy = true
-            )
-
-            SystemStatusItem(
-                label = "Notificações Push",
-                status = "Ativas",
-                isHealthy = true
-            )
-
-            SystemStatusItem(
-                label = "Sincronização",
-                status = "Em dia",
-                isHealthy = true
-            )
-        }
-    }
-}
-
-/**
- * SystemStatusItem - Item de status individual
- */
-@Composable
-fun SystemStatusItem(
-    label: String,
-    status: String,
-    isHealthy: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = if (isHealthy)
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                else
-                    MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
-            ) {
-                Text(
-                    text = status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isHealthy)
-                        MaterialTheme.colorScheme.tertiary
-                    else
-                        MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(8.dp, 4.dp)
+                MetricCard(
+                    title = "Total Turmas",
+                    value = "12",
+                    modifier = Modifier.weight(1f)
                 )
             }
-        }
-    }
-}
 
-/**
- * AdminInfoCard - Card com informações do sistema
- */
-@Composable
-fun AdminInfoCard(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = color,
-                    modifier = Modifier.size(24.dp)
+                MetricCard(
+                    title = "Frequência Geral",
+                    value = "88%",
+                    trend = "-1% vs mês anterior",
+                    isPositive = false,
+                    modifier = Modifier.weight(1f)
                 )
-                Column {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = value,
-                        style = MaterialTheme.typography.titleSmall
+                MetricCard(
+                    title = "Alertas Críticos",
+                    value = "5",
+                    trend = "Ação Necessária",
+                    isPositive = false,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Card {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Desempenho por Série", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SimpleBarChart(
+                        data = mapOf(
+                            "6º Ano" to 75,
+                            "7º Ano" to 82,
+                            "8º Ano" to 78,
+                            "9º Ano" to 70,
+                            "1º EM" to 65,
+                            "2º EM" to 72,
+                            "3º EM" to 80
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
                     )
                 }
+            }
+            
+            Button(
+                onClick = { /* TODO: Generate Full Report */ },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Gerar Relatório Completo")
             }
         }
     }

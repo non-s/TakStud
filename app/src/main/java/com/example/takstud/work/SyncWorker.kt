@@ -22,10 +22,12 @@ class SyncWorker(
     override suspend fun doWork(): Result {
         return try {
             // Sincronizar cada coleção
-            syncTasks()
+            // TODO: Implementar syncTasks() quando TaskDao tiver métodos de sync
+            // syncTasks()
             syncNotices()
             syncSchedules()
-            syncStudents()
+            // TODO: Implementar syncStudents() quando StudentDao tiver métodos de sync
+            // syncStudents()
             syncGrades()
             syncAttendance()
 
@@ -43,6 +45,8 @@ class SyncWorker(
         }
     }
 
+    // TODO: Implementar quando TaskEntity tiver campo isSynced e TaskDao tiver métodos de sync
+    /*
     private suspend fun syncTasks() {
         val unsynced = db.taskDao().getUnsyncedTasks()
         unsynced.forEach { taskEntity ->
@@ -60,6 +64,7 @@ class SyncWorker(
             db.taskDao().markAsSynced(unsynced.map { it.id })
         }
     }
+    */
 
     private suspend fun syncNotices() {
         val unsynced = db.noticeDao().getUnsyncedNotices()
@@ -94,6 +99,8 @@ class SyncWorker(
         }
     }
 
+    // TODO: Implementar quando StudentEntity tiver campo isSynced e StudentDao tiver métodos de sync
+    /*
     private suspend fun syncStudents() {
         val unsynced = db.studentDao().getUnsyncedStudents()
         unsynced.forEach { studentEntity ->
@@ -109,6 +116,7 @@ class SyncWorker(
             db.studentDao().markAsSynced(unsynced.map { it.id })
         }
     }
+    */
 
     private suspend fun syncGrades() {
         val unsynced = db.gradeDao().getUnsyncedGrades()

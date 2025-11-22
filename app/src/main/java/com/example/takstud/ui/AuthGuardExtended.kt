@@ -8,8 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.takstud.TakStudRepository
-import com.example.takstud.TakStudViewModel
+
+
 import com.example.takstud.model.Role
 import com.example.takstud.model.Student
 import com.example.takstud.security.AccessValidator
@@ -45,7 +45,6 @@ import com.example.takstud.util.SessionManager
 fun ParentAccessGuard(
     studentId: String,
     sessionManager: SessionManager,
-    repository: TakStudRepository,
     fallbackRoute: () -> Unit,
     onAccessDenied: ((String) -> Unit)? = null,
     content: @Composable () -> Unit
