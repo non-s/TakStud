@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -48,7 +47,7 @@ class StudentViewModel @Inject constructor(
             // Usando first() para pegar o estado atual dos flows
             val grades = gradeRepository.getGrades().first().filter { it.studentId == studentId }
             val attendance = attendanceRepository.getAttendanceRecords().first().filter { it.studentId == studentId }
-
+            
             _predictionResult.value = predictionEngine.predictStudentPerformance(student, grades, attendance)
         }
     }
@@ -62,7 +61,7 @@ class StudentViewModel @Inject constructor(
     fun registerStudent(name: String, ra: String, className: String) {
         val newStudent = Student(
             name = name,
-            ra = ra,
+            registrationNumber = ra,
             studentClass = className
         )
         saveStudent(newStudent) {}

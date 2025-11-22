@@ -35,7 +35,7 @@ class TaskViewModel @Inject constructor(
     val grades: StateFlow<List<Grade>> = gradeRepository.getGrades()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val _currentTask = MutableStateFlow<UiState<TaskExtended>>(UiState.Empty)
+    private val _currentTask = MutableStateFlow<UiState<TaskExtended>>(UiState.Empty())
     val currentTask: StateFlow<UiState<TaskExtended>> = _currentTask.asStateFlow()
 
     fun getTasksForStudent(student: Student): StateFlow<List<TaskExtended>> {

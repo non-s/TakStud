@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import com.example.takstud.model.student.*
 import com.example.takstud.ui.components.student.*
 import com.example.takstud.viewmodel.StudentViewModel
-import com.example.takstud.viewmodel.StudentViewModel
 import java.util.*
 
 /**

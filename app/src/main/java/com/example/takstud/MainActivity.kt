@@ -26,6 +26,8 @@ import com.example.takstud.viewmodel.ScheduleViewModel
 import com.example.takstud.viewmodel.StudentViewModel
 import com.example.takstud.viewmodel.TaskViewModel
 import com.example.takstud.model.task.TaskExtended
+import com.example.takstud.model.task.toTask
+import com.example.takstud.model.task.toTaskExtended
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -114,7 +116,7 @@ fun TakStudApp(
                 if (student != null) {
                     ParentScreen(
                         student = student,
-                        tasks = taskViewModel.getTasksForStudent(student).collectAsState().value,
+                        tasks = taskViewModel.getTasksForStudent(student).collectAsState().value.map { it.toTask() },
                         notices = noticeViewModel.getNoticesForStudent(student).collectAsState().value,
                         schedules = scheduleViewModel.getSchedulesForStudent(student).collectAsState().value,
                         grades = taskViewModel.getGradesForStudent(student).collectAsState().value,
@@ -127,27 +129,27 @@ fun TakStudApp(
         }
         composable(TakStudDestinations.TASK_LIST_ROUTE) {
              TaskListScreen(
-                tasks = taskViewModel.tasks.collectAsState().value,
+                tasks = taskViewModel.tasks.collectAsState().value.map { it.toTask() },
                 onAddTask = { navController.navigate("${TakStudDestinations.ADD_TASK_ROUTE}/null") },
                 onTaskClick = { task -> navController.navigate("${TakStudDestinations.ADD_TASK_ROUTE}/${task.id}") },
-                onDeleteTask = { task -> taskViewModel.deleteTask(task) },
+                onDeleteTask = { task -> taskViewModel.deleteTask(task.toTaskExtended()) },
                 onManageGrades = { task -> navController.navigate("${TakStudDestinations.MANAGE_GRADES_ROUTE}/${task.id}") },
                 onBack = { navigationActions.onBack() }
             )
         }
         composable("${TakStudDestinations.ADD_TASK_ROUTE}/{taskId}") { backStackEntry ->
             val taskId = backStackEntry.arguments?.getString("taskId")
-            val task = if (taskId == "null") null else taskViewModel.tasks.collectAsState().value.find { it.id == taskId }
+            val task = if (taskId == "null") null else taskViewModel.tasks.collectAsState().value.find { it.id == taskId }?.toTask()
             AddTaskScreen(
                 taskToEdit = task,
                 schedules = scheduleViewModel.schedules.collectAsState().value,
-                onSave = { t -> taskViewModel.saveTask(t) { navController.popBackStack() } },
+                onSave = { t -> taskViewModel.saveTask(t.toTaskExtended()) { navController.popBackStack() } },
                 onBack = { navigationActions.onBack() }
             )
         }
         composable("${TakStudDestinations.MANAGE_GRADES_ROUTE}/{taskId}") { backStackEntry ->
             val taskId = backStackEntry.arguments?.getString("taskId")
-            val task = taskViewModel.tasks.collectAsState().value.find { it.id == taskId }
+            val task = taskViewModel.tasks.collectAsState().value.find { it.id == taskId }?.toTask()
             if (task != null) {
                  ManageGradesScreen(
                     task = task,

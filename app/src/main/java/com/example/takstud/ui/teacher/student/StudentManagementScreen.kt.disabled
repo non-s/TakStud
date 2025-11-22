@@ -16,9 +16,6 @@ import androidx.compose.ui.unit.dp
 import com.example.takstud.model.student.*
 import com.example.takstud.ui.components.student.*
 import com.example.takstud.viewmodel.StudentViewModel
-import com.example.takstud.viewmodel.StudentUiState
-import com.example.takstud.viewmodel.StudentFilters
-import com.example.takstud.viewmodel.StudentSortOption
 
 /**
  * 👨‍🎓 Tela Principal de Gerenciamento de Alunos

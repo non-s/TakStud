@@ -28,6 +28,7 @@ import com.example.takstud.viewmodel.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
     navController: NavController,

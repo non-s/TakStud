@@ -1,5 +1,6 @@
 package com.example.takstud.model.task
 
+import com.example.takstud.model.Task
 import java.util.UUID
 
 /**
@@ -453,4 +454,45 @@ enum class TaskSortOption {
     PRIORITY_ASC,
     STATUS,
     COMPLETION_RATE_DESC
+}
+
+// ==================== CONVERSIONS ====================
+
+/**
+ * Converte TaskExtended para Task (modelo básico)
+ */
+fun TaskExtended.toTask(): Task {
+    return Task(
+        id = id,
+        title = title,
+        description = description,
+        dueDate = dueDate?.let { java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date(it)) } ?: "",
+        studentClass = classId,
+        createdAt = createdAt,
+        modifiedAt = updatedAt,
+        isSynced = true
+    )
+}
+
+/**
+ * Converte Task para TaskExtended
+ */
+fun Task.toTaskExtended(): TaskExtended {
+    val dueDateMillis = try {
+        if (dueDate.isNotBlank()) {
+            java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).parse(dueDate)?.time
+        } else null
+    } catch (e: Exception) {
+        null
+    }
+
+    return TaskExtended(
+        id = id,
+        title = title,
+        description = description,
+        dueDate = dueDateMillis,
+        classId = studentClass,
+        createdAt = createdAt,
+        updatedAt = modifiedAt
+    )
 }

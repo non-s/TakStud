@@ -1,7 +1,8 @@
 package com.example.takstud.util
 
-import com.example.takstud.model.grade.Grade
+import com.example.takstud.model.Grade
 import com.example.takstud.model.AttendanceRecord
+import com.example.takstud.model.Student
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -33,6 +34,17 @@ class PredictionEngine @Inject constructor() {
     /**
      * Analisa o desempenho do estudante e gera previsões.
      */
+    fun predictStudentPerformance(
+        student: Student,
+        grades: List<Grade>,
+        attendance: List<AttendanceRecord>
+    ): PredictionResult {
+        return predictPerformance(grades, attendance)
+    }
+
+    /**
+     * Analisa o desempenho e gera previsões.
+     */
     fun predictPerformance(
         grades: List<Grade>,
         attendance: List<AttendanceRecord>
@@ -43,7 +55,9 @@ class PredictionEngine @Inject constructor() {
 
         // 1. Análise de Tendência de Notas
         // Ordenar por data
-        val sortedGrades = grades.sortedBy { it.createdAt }.mapNotNull { it.score }
+        val sortedGrades = grades.sortedBy { it.createdAt }.mapNotNull {
+            it.score.toDoubleOrNull() ?: it.value.toDoubleOrNull()
+        }
         
         val trend = calculateTrend(sortedGrades)
         val average = sortedGrades.average()

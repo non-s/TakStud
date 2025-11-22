@@ -2,6 +2,7 @@ package com.example.takstud.util
 
 import com.example.takstud.model.grade.*
 import com.example.takstud.model.Student
+import com.example.takstud.model.Grade
 import com.example.takstud.model.task.TaskExtended
 import java.util.UUID
 import javax.inject.Inject
@@ -14,6 +15,13 @@ import javax.inject.Singleton
  */
 @Singleton
 class ReportCardGenerator @Inject constructor() {
+
+    /**
+     * Helper para converter score de Grade para Double
+     */
+    private fun Grade.scoreAsDouble(): Double {
+        return score.toDoubleOrNull() ?: value.toDoubleOrNull() ?: 0.0
+    }
 
     /**
      * Gera um boletim para um estudante específico.
@@ -82,10 +90,10 @@ class ReportCardGenerator @Inject constructor() {
         val assessmentSummaries = grades.map { grade ->
             val task = tasks.find { it.id == grade.taskId }
             AssessmentGradeSummary(
-                assessmentId = grade.assessmentId,
+                assessmentId = grade.taskId, // Usando taskId como assessmentId
                 assessmentTitle = task?.title ?: "Atividade",
                 assessmentType = AssessmentType.ASSIGNMENT, // Default
-                score = grade.score ?: 0.0,
+                score = grade.scoreAsDouble(),
                 maxScore = 10.0, // Default
                 weight = 1.0, // Default
                 date = grade.createdAt
@@ -93,7 +101,7 @@ class ReportCardGenerator @Inject constructor() {
         }
 
         val average = if (grades.isNotEmpty()) {
-            grades.mapNotNull { it.score }.average()
+            grades.map { it.scoreAsDouble() }.average()
         } else {
             0.0
         }

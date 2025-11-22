@@ -2,22 +2,9 @@ package com.example.takstud
 
 import android.app.Application
 import android.util.Log
+import androidx.work.Configuration
 import com.google.firebase.Firebase
 import com.google.firebase.initialize
-import dagger.hilt.android.HiltAndroidApp
-
-/**
- * Application class para TakStud.
- *
- * Responsabilidades:
- * - Inicializar Firebase e dependências globais
- * - Configurar logging
- * - Inicializar WorkManager para tarefas em background
- * - Hilt para injeção de dependências
- *
- * Esta classe é carregada antes da MainActivity e do primeiro Activity.
- */
-import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 

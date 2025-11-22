@@ -32,7 +32,7 @@ class ReportCardViewModel @Inject constructor(
         viewModelScope.launch {
             _reportCard.value = UiState.Loading()
             try {
-                val student = studentRepository.getStudentById(studentId)
+                val student = studentRepository.getStudents().first().find { it.id == studentId }
                 if (student == null) {
                     _reportCard.value = UiState.Error("Estudante não encontrado")
                     return@launch
@@ -40,7 +40,7 @@ class ReportCardViewModel @Inject constructor(
 
                 // Carregar dados relacionados
                 // Nota: Em um app real, filtraríamos por ano/semestre aqui
-                val grades = gradeRepository.getGradesByStudent(studentId).first()
+                val grades = gradeRepository.getGrades().first().filter { it.studentId == studentId }
                 val tasks = taskRepository.getTasks().first() // Idealmente filtrar tasks relevantes
 
                 val report = reportCardGenerator.generateReportCard(

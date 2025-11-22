@@ -295,9 +295,9 @@ data class DetailedGradeEntity(
     }
 
     companion object {
-        fun fromGrade(grade: Grade): GradeEntity {
+        fun fromGrade(grade: Grade): DetailedGradeEntity {
             val gson = Gson()
-            return GradeEntity(
+            return DetailedGradeEntity(
                 id = grade.id,
                 assessmentId = grade.assessmentId,
                 studentId = grade.studentId,

@@ -16,6 +16,13 @@ import javax.inject.Singleton
 @Singleton
 class AnalyticsEngine @Inject constructor() {
 
+    /**
+     * Helper para converter score de Grade para Double
+     */
+    private fun Grade.scoreAsDouble(): Double? {
+        return score.toDoubleOrNull() ?: value.toDoubleOrNull()
+    }
+
     data class ClassAnalytics(
         val classId: String,
         val totalStudents: Int,
@@ -58,7 +65,7 @@ class AnalyticsEngine @Inject constructor() {
         // Notas
         val classGrades = grades.filter { it.studentId in studentIds }
         val avgGrade = if (classGrades.isNotEmpty()) {
-            classGrades.mapNotNull { it.score }.average()
+            classGrades.mapNotNull { it.scoreAsDouble() }.average()
         } else {
             0.0
         }
@@ -74,7 +81,7 @@ class AnalyticsEngine @Inject constructor() {
         // Risco (Simplificado)
         val atRiskCount = classStudents.count { student ->
             val studentGrades = classGrades.filter { it.studentId == student.id }
-            val studentAvg = if (studentGrades.isNotEmpty()) studentGrades.mapNotNull { it.score }.average() else 0.0
+            val studentAvg = if (studentGrades.isNotEmpty()) studentGrades.mapNotNull { it.scoreAsDouble() }.average() else 0.0
             studentAvg < 6.0 // Critério simples de risco
         }
 
@@ -107,7 +114,7 @@ class AnalyticsEngine @Inject constructor() {
         }
 
         val avgGrade = if (grades.isNotEmpty()) {
-            grades.mapNotNull { it.score }.average()
+            grades.mapNotNull { it.scoreAsDouble() }.average()
         } else {
             0.0
         }
@@ -118,7 +125,7 @@ class AnalyticsEngine @Inject constructor() {
         // Cálculo simplificado para exemplo
         val criticalAlerts = students.count { student ->
             val studentGrades = grades.filter { it.studentId == student.id }
-            val studentAvg = if (studentGrades.isNotEmpty()) studentGrades.mapNotNull { it.score }.average() else 0.0
+            val studentAvg = if (studentGrades.isNotEmpty()) studentGrades.mapNotNull { it.scoreAsDouble() }.average() else 0.0
             studentAvg < 5.0
         }
 
@@ -144,7 +151,7 @@ class AnalyticsEngine @Inject constructor() {
         )
 
         grades.forEach { grade ->
-            val score = grade.score ?: return@forEach
+            val score = grade.scoreAsDouble() ?: return@forEach
             when {
                 score >= 9.0 -> distribution["A (9-10)"] = distribution["A (9-10)"]!! + 1
                 score >= 7.0 -> distribution["B (7-8.9)"] = distribution["B (7-8.9)"]!! + 1

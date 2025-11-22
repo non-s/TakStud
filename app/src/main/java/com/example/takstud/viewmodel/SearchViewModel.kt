@@ -6,6 +6,7 @@ import com.example.takstud.data.repository.GradeRepository
 import com.example.takstud.data.repository.StudentRepository
 import com.example.takstud.data.repository.TaskRepository
 import com.example.takstud.model.*
+import com.example.takstud.model.task.TaskExtended
 import com.example.takstud.ui.common.BaseViewModel
 import com.example.takstud.ui.common.UiState
 import com.example.takstud.util.SearchEngine
@@ -33,8 +34,8 @@ class SearchViewModel @Inject constructor(
     private val _studentResults = MutableStateFlow<UiState<List<SearchResult<Student>>>>(UiState.Empty())
     val studentResults: StateFlow<UiState<List<SearchResult<Student>>>> = _studentResults.asStateFlow()
 
-    private val _taskResults = MutableStateFlow<UiState<List<SearchResult<Task>>>>(UiState.Empty())
-    val taskResults: StateFlow<UiState<List<SearchResult<Task>>>> = _taskResults.asStateFlow()
+    private val _taskResults = MutableStateFlow<UiState<List<SearchResult<TaskExtended>>>>(UiState.Empty())
+    val taskResults: StateFlow<UiState<List<SearchResult<TaskExtended>>>> = _taskResults.asStateFlow()
 
     private val _gradeResults = MutableStateFlow<UiState<List<SearchResult<Grade>>>>(UiState.Empty())
     val gradeResults: StateFlow<UiState<List<SearchResult<Grade>>>> = _gradeResults.asStateFlow()
