@@ -147,8 +147,14 @@ fun RegisterStudentScreen(
                     onValueChange = { },
                     label = { Text(stringResource(R.string.class_hint)) },
                     isError = classError != null,
-                    modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+                    modifier = Modifier.fillMaxWidth(),
                     readOnly = true
+                )
+                // Box clicável transparente sobre o TextField
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expanded = true }
                 )
                 DropdownMenu(
                     expanded = expanded,

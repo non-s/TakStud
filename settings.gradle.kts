@@ -15,4 +15,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "TakStud"
 include(":app")
-include(":data")

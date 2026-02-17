@@ -1,161 +1,306 @@
 package com.example.takstud.ui.components
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.takstud.ui.theme.*
 
+/**
+ * Gráfico de Linha Animado para evolução de notas
+ */
 @Composable
-fun SimpleBarChart(
-    data: Map<String, Int>,
+fun LineChart(
+    data: List<Float>,
+    labels: List<String>,
     modifier: Modifier = Modifier,
-    barColor: Color = MaterialTheme.colorScheme.primary
+    title: String = "Evolução de Notas",
+    maxValue: Float = 5f,
+    color: Color = PrimaryBlue
 ) {
-    if (data.isEmpty()) {
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text("Sem dados")
-        }
-        return
-    }
-
-    val maxValue = data.values.maxOrNull() ?: 0
-    val keys = data.keys.toList()
-
-    Column(modifier = modifier) {
-        Canvas(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            val barWidth = size.width / (data.size * 2f)
-            val spacing = size.width / (data.size * 2f)
-            val heightScale = if (maxValue > 0) size.height / maxValue else 0f
-
-            data.values.forEachIndexed { index, value ->
-                val x = spacing + (index * (barWidth + spacing))
-                val barHeight = value * heightScale
-                
-                drawRect(
-                    color = barColor,
-                    topLeft = Offset(x, size.height - barHeight),
-                    size = Size(barWidth, barHeight)
-                )
-            }
-        }
-        
-        // Labels simplificados
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            keys.forEach { key ->
-                Text(
-                    text = key.take(3), // Abreviação
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp
-                )
-            }
+    var animationProgress by remember { mutableStateOf(0f) }
+    
+    LaunchedEffect(data) {
+        animationProgress = 0f
+        animate(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = tween(1000, easing = FastOutSlowInEasing)
+        ) { value, _ ->
+            animationProgress = value
         }
     }
-}
 
-@Composable
-fun SimplePieChart(
-    data: Map<String, Float>, // Label -> Percentage (0-100)
-    modifier: Modifier = Modifier,
-    colors: List<Color> = listOf(
-        Color(0xFF4CAF50), Color(0xFFFFC107), Color(0xFFF44336), Color(0xFF2196F3), Color(0xFF9C27B0)
-    )
-) {
-    if (data.isEmpty()) {
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text("Sem dados")
-        }
-        return
-    }
-
-    val total = data.values.sum()
-    var startAngle = -90f
-
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Canvas(modifier = Modifier.size(150.dp)) {
-            data.values.forEachIndexed { index, value ->
-                val sweepAngle = (value / total) * 360f
-                val color = colors.getOrElse(index) { Color.Gray }
-                
-                drawArc(
-                    color = color,
-                    startAngle = startAngle,
-                    sweepAngle = sweepAngle,
-                    useCenter = true
-                )
-                startAngle += sweepAngle
-            }
-        }
-        
-        Spacer(modifier = Modifier.width(16.dp))
-        
-        Column {
-            data.keys.forEachIndexed { index, key ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Canvas(modifier = Modifier.size(12.dp)) {
-                        drawCircle(color = colors.getOrElse(index) { Color.Gray })
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "$key (${data[key]?.toInt()}%)",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun MetricCard(
-    title: String,
-    value: String,
-    trend: String? = null,
-    isPositive: Boolean = true,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.material3.Card(
-        modifier = modifier,
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Neutral900
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Canvas(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                if (data.isEmpty()) return@Canvas
+                
+                val width = size.width
+                val height = size.height
+                val spacing = width / (data.size - 1).coerceAtLeast(1)
+                
+                // Grid lines
+                for (i in 0..4) {
+                    val y = height * (i / 4f)
+                    drawLine(
+                        color = Neutral200,
+                        start = Offset(0f, y),
+                        end = Offset(width, y),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+                
+                // Line path
+                val path = Path()
+                val animatedData = data.map { it * animationProgress }
+                
+                animatedData.forEachIndexed { index, value ->
+                    val x = index * spacing
+                    val y = height - (value / maxValue * height)
+                    
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                
+                drawPath(
+                    path = path,
+                    color = color,
+                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                )
+                
+                // Points
+                animatedData.forEachIndexed { index, value ->
+                    val x = index * spacing
+                    val y = height - (value / maxValue * height)
+                    
+                    drawCircle(color = color, radius = 6.dp.toPx(), center = Offset(x, y))
+                    drawCircle(color = Color.White, radius = 3.dp.toPx(), center = Offset(x, y))
+                }
+            }
+            
+            if (labels.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    labels.forEach { label ->
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Neutral500,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Gráfico de Barras Animado
+ */
+@Composable
+fun BarChart(
+    data: List<Pair<String, Float>>,
+    modifier: Modifier = Modifier,
+    title: String = "Notas por Matéria",
+    maxValue: Float = 5f,
+    color: Color = AccentTeal
+) {
+    var animationProgress by remember { mutableStateOf(0f) }
+    
+    LaunchedEffect(data) {
+        animationProgress = 0f
+        animate(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = tween(800, easing = FastOutSlowInEasing)
+        ) { value, _ ->
+            animationProgress = value
+        }
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
             Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Neutral900
             )
-            if (trend != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            data.forEach { (label, value) ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Neutral700,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = String.format("%.1f", value),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Neutral100)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(((value / maxValue) * animationProgress).coerceIn(0f, 1f))
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(color, color.copy(alpha = 0.7f))
+                                    )
+                                )
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Progresso Circular Animado
+ */
+@Composable
+fun CircularProgressCard(
+    title: String,
+    value: Float,
+    maxValue: Float = 100f,
+    modifier: Modifier = Modifier,
+    color: Color = Success,
+    icon: String = "📊"
+) {
+    var animationProgress by remember { mutableStateOf(0f) }
+    
+    LaunchedEffect(value) {
+        animationProgress = 0f
+        animate(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = tween(1000, easing = FastOutSlowInEasing)
+        ) { progress, _ ->
+            animationProgress = progress
+        }
+    }
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = icon, fontSize = 32.sp)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(120.dp)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidth = 12.dp.toPx()
+                    
+                    drawArc(
+                        color = Neutral100,
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                        size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                        topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
+                    )
+                    
+                    val sweepAngle = (value / maxValue * 360f) * animationProgress
+                    drawArc(
+                        color = color,
+                        startAngle = -90f,
+                        sweepAngle = sweepAngle,
+                        useCenter = false,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                        size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                        topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
+                    )
+                }
+                
                 Text(
-                    text = trend,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isPositive) Color(0xFF4CAF50) else Color(0xFFF44336)
+                    text = String.format("%.0f%%", (value / maxValue * 100) * animationProgress),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Neutral900
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Neutral500
+            )
         }
     }
 }

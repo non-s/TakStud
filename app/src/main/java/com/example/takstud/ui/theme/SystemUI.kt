@@ -14,7 +14,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
  */
 @Composable
 fun SetupSystemUI(
-    statusBarColor: Color = PrimaryBrand,
+    statusBarColor: Color = PrimaryBlue,
     navigationBarColor: Color = MaterialTheme.colorScheme.surface,
     darkIcons: Boolean = false
 ) {
@@ -48,8 +48,8 @@ fun SetupSystemUI(
 @Composable
 fun SetupParentTheme() {
     SetupSystemUI(
-        statusBarColor = SecondaryBrand,
-        navigationBarColor = SecondaryBrand.copy(alpha = 0.9f),
+        statusBarColor = AccentTeal,
+        navigationBarColor = AccentTeal.copy(alpha = 0.9f),
         darkIcons = false
     )
 }
@@ -60,8 +60,8 @@ fun SetupParentTheme() {
 @Composable
 fun SetupTeacherTheme() {
     SetupSystemUI(
-        statusBarColor = PrimaryBrand,
-        navigationBarColor = PrimaryBrand.copy(alpha = 0.9f),
+        statusBarColor = PrimaryBlue,
+        navigationBarColor = PrimaryBlue.copy(alpha = 0.9f),
         darkIcons = false
     )
 }
@@ -72,7 +72,7 @@ fun SetupTeacherTheme() {
 @Composable
 fun SetupLoginTheme() {
     SetupSystemUI(
-        statusBarColor = PrimaryBrand,
+        statusBarColor = PrimaryBlue,
         navigationBarColor = Color.White,
         darkIcons = true
     )

@@ -3,98 +3,19 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <group
-        android:translateX="54"
-        android:translateY="54">
-
-        <!-- Livro aberto -->
-        <group android:translateY="8">
-            <!-- Sombra do livro -->
-            <path
-                android:fillColor="#20000000"
-                android:pathData="M-18,10 L-18,18 L18,18 L18,10 Q0,13 -18,10 Z"/>
-
-            <!-- Página esquerda -->
-            <path
-                android:fillColor="#FFFFFF"
-                android:pathData="M-18,-8 L-18,10 Q-2,7 0,7 L0,-8 Q-2,-8 -18,-8 Z"/>
-
-            <!-- Página direita -->
-            <path
-                android:fillColor="#F5F5F5"
-                android:pathData="M0,-8 L0,7 Q2,7 18,10 L18,-8 Q2,-8 0,-8 Z"/>
-
-            <!-- Lombada do livro -->
-            <path
-                android:fillColor="#E0E0E0"
-                android:pathData="M-1,-8 L-1,7 L1,7 L1,-8 Z"/>
-
-            <!-- Linhas de texto - página esquerda -->
-            <path
-                android:strokeColor="#9575CD"
-                android:strokeWidth="0.8"
-                android:pathData="M-14,-4 L-4,-4"/>
-            <path
-                android:strokeColor="#9575CD"
-                android:strokeWidth="0.8"
-                android:pathData="M-14,-1 L-4,-1"/>
-            <path
-                android:strokeColor="#9575CD"
-                android:strokeWidth="0.8"
-                android:pathData="M-14,2 L-4,2"/>
-
-            <!-- Linhas de texto - página direita -->
-            <path
-                android:strokeColor="#64B5F6"
-                android:strokeWidth="0.8"
-                android:pathData="M4,-4 L14,-4"/>
-            <path
-                android:strokeColor="#64B5F6"
-                android:strokeWidth="0.8"
-                android:pathData="M4,-1 L14,-1"/>
-            <path
-                android:strokeColor="#64B5F6"
-                android:strokeWidth="0.8"
-                android:pathData="M4,2 L14,2"/>
-        </group>
-
-        <!-- Chapéu de formatura -->
-        <group android:translateY="-16">
-            <!-- Base do chapéu -->
-            <path
-                android:fillColor="#FFC107"
-                android:pathData="M-12,-6 L-12,-4 L12,-4 L12,-6 Z"/>
-
-            <!-- Topo do chapéu -->
-            <path
-                android:fillColor="#FFD54F"
-                android:pathData="M0,-14 L14,-6 L-14,-6 Z"/>
-
-            <!-- Borla -->
-            <group android:translateX="8">
-                <!-- Fio da borla -->
-                <path
-                    android:strokeColor="#FFC107"
-                    android:strokeWidth="0.6"
-                    android:pathData="M0,-10 L0,-3"/>
-
-                <!-- Ponta da borla (círculo como path) -->
-                <path
-                    android:fillColor="#FFA000"
-                    android:pathData="M0,-0.5 A1.5,1.5 0 1,0 0,-3.5 A1.5,1.5 0 1,0 0,-0.5 Z"/>
-            </group>
-        </group>
-
-        <!-- Estrela de destaque -->
-        <group
-            android:translateX="-20"
-            android:translateY="-20"
-            android:scaleX="0.7"
-            android:scaleY="0.7">
-            <path
-                android:fillColor="#FFD700"
-                android:pathData="M0,-4 L1,-1 L4,0 L1,1 L0,4 L-1,1 L-4,0 L-1,-1 Z"/>
-        </group>
-    </group>
+    <path
+        android:fillColor="#0D47A1"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,35h38v5h-38z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,35h4v38h-4z"/>
+    <path
+        android:fillColor="#FFAB00"
+        android:pathData="M45,70 C45,65 50,60 55,60 C60,60 65,65 65,70 L45,70 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M53,60l-4,10h10l-4,-10z"/>
 </vector>

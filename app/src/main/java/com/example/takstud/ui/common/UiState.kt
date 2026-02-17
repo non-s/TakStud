@@ -32,6 +32,11 @@ import androidx.compose.runtime.Stable
 @Stable
 sealed class UiState<out T> {
     /**
+     * Estado inicial ou inativo.
+     */
+    data object Idle : UiState<Nothing>()
+
+    /**
      * Estado de carregamento.
      * Mostrar loading indicator, spinner, skeleton screen, etc.
      */
@@ -84,6 +89,7 @@ fun <T> UiState<T>.getOrNull(): T? = when (this) {
     is UiState.Loading -> this.previousData
     is UiState.Error -> this.previousData
     is UiState.Empty -> null
+    is UiState.Idle -> null
 }
 
 /**
@@ -117,6 +123,7 @@ inline fun <T, R> UiState<T>.map(transform: (T) -> R): UiState<R> = when (this) 
     is UiState.Loading -> UiState.Loading(null, this.message)
     is UiState.Error -> UiState.Error(this.message, this.exception, this.retryable, null)
     is UiState.Empty -> UiState.Empty(this.message)
+    is UiState.Idle -> UiState.Idle
 }
 
 /**
@@ -127,6 +134,7 @@ inline fun <T, R> UiState<T>.flatMap(transform: (T) -> UiState<R>): UiState<R> =
     is UiState.Loading -> UiState.Loading(null, this.message)
     is UiState.Error -> UiState.Error(this.message, this.exception, this.retryable, null)
     is UiState.Empty -> UiState.Empty(this.message)
+    is UiState.Idle -> UiState.Idle
 }
 
 /**
@@ -137,6 +145,7 @@ fun <T> UiState<T>.getMessage(): String = when (this) {
     is UiState.Success -> this.message ?: "Carregado com sucesso"
     is UiState.Error -> this.message
     is UiState.Empty -> this.message
+    is UiState.Idle -> "Inativo"
 }
 
 // ============== FACTORY FUNCTIONS ==============

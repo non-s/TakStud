@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,20 +60,20 @@ fun ScheduleManagementScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
                     // Filtros
                     IconButton(onClick = { showFilters = !showFilters }) {
-                        Icon(Icons.Default.FilterList, contentDescription = "Filtros")
+                        Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
                     }
 
                     // Menu de ações
                     var showMenu by remember { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Mais opções")
+                            Icon(Icons.Filled.MoreVert, contentDescription = "Mais opções")
                         }
                         DropdownMenu(
                             expanded = showMenu,
@@ -83,7 +86,7 @@ fun ScheduleManagementScreen(
                                     onManageSubjects()
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.MenuBook, contentDescription = null)
+                                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null)
                                 }
                             )
                             DropdownMenuItem(
@@ -93,7 +96,7 @@ fun ScheduleManagementScreen(
                                     // TODO: Navegar para templates
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.FileCopy, contentDescription = null)
+                                    Icon(Icons.Filled.FileCopy, contentDescription = null)
                                 }
                             )
                             DropdownMenuItem(
@@ -103,7 +106,7 @@ fun ScheduleManagementScreen(
                                     // TODO: Configurações
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Settings, contentDescription = null)
+                                    Icon(Icons.Filled.Settings, contentDescription = null)
                                 }
                             )
                         }
@@ -120,7 +123,7 @@ fun ScheduleManagementScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onCreateSchedule,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("Novo Horário") },
                 containerColor = AccentBlue
             )
@@ -141,7 +144,7 @@ fun ScheduleManagementScreen(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
                     text = { Text("Horários") },
-                    icon = { Icon(Icons.Default.Schedule, contentDescription = null) }
+                    icon = { Icon(Icons.Filled.Schedule, contentDescription = null) }
                 )
                 Tab(
                     selected = selectedTabIndex == 1,
@@ -155,7 +158,7 @@ fun ScheduleManagementScreen(
                                 }
                             }
                         ) {
-                            Icon(Icons.Default.Warning, contentDescription = null)
+                            Icon(Icons.Filled.Warning, contentDescription = null)
                         }
                     }
                 )
@@ -163,7 +166,7 @@ fun ScheduleManagementScreen(
                     selected = selectedTabIndex == 2,
                     onClick = { selectedTabIndex = 2 },
                     text = { Text("Estatísticas") },
-                    icon = { Icon(Icons.Default.BarChart, contentDescription = null) }
+                    icon = { Icon(Icons.Filled.BarChart, contentDescription = null) }
                 )
             }
 
@@ -233,19 +236,19 @@ private fun SchedulesTabContent(
                 selected = viewMode == ViewMode.LIST,
                 onClick = { viewMode = ViewMode.LIST },
                 label = { Text("Lista") },
-                leadingIcon = { Icon(Icons.Default.List, contentDescription = null) }
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }
             )
             FilterChip(
                 selected = viewMode == ViewMode.GRID,
                 onClick = { viewMode = ViewMode.GRID },
                 label = { Text("Grade") },
-                leadingIcon = { Icon(Icons.Default.GridView, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Filled.GridView, contentDescription = null) }
             )
             FilterChip(
                 selected = viewMode == ViewMode.CALENDAR,
                 onClick = { viewMode = ViewMode.CALENDAR },
                 label = { Text("Calendário") },
-                leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Filled.CalendarToday, contentDescription = null) }
             )
         }
 
@@ -276,7 +279,7 @@ private fun SchedulesTabContent(
                     }
                 } else {
                     EmptyState(
-                        icon = Icons.Default.Schedule,
+                        icon = Icons.Filled.Schedule,
                         message = "Selecione um horário para visualizar"
                     )
                 }
@@ -284,7 +287,7 @@ private fun SchedulesTabContent(
 
             ViewMode.CALENDAR -> {
                 EmptyState(
-                    icon = Icons.Default.CalendarToday,
+                    icon = Icons.Filled.CalendarToday,
                     message = "Visualização em calendário em breve"
                 )
             }
@@ -305,7 +308,7 @@ private fun ScheduleListView(
 ) {
     if (schedules.isEmpty()) {
         EmptyState(
-            icon = Icons.Default.Schedule,
+            icon = Icons.Filled.Schedule,
             message = "Nenhum horário cadastrado",
             action = "Crie seu primeiro horário clicando no botão abaixo"
         )
@@ -390,7 +393,7 @@ private fun ScheduleCard(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Divider()
+                    HorizontalDivider()
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -400,7 +403,7 @@ private fun ScheduleCard(
                             onClick = onSelect,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Ver")
                         }
@@ -409,7 +412,7 @@ private fun ScheduleCard(
                             onClick = onEdit,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Editar")
                         }
@@ -423,7 +426,7 @@ private fun ScheduleCard(
                             onClick = onExport,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Filled.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Exportar")
                         }
@@ -433,7 +436,7 @@ private fun ScheduleCard(
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed)
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Excluir")
                         }
@@ -454,7 +457,7 @@ private fun ConflictsTabContent(
 ) {
     if (conflicts.isEmpty()) {
         EmptyState(
-            icon = Icons.Default.CheckCircle,
+            icon = Icons.Filled.CheckCircle,
             message = "Nenhum conflito detectado",
             action = "Todas as grades estão configuradas corretamente!"
         )
@@ -475,7 +478,7 @@ private fun ConflictsTabContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Default.Warning,
+                            Icons.Filled.Warning,
                             contentDescription = null,
                             tint = ErrorRed,
                             modifier = Modifier.size(32.dp)

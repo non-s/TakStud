@@ -15,8 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.takstud.util.ThemeManager
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.takstud.viewmodel.ThemeViewModel
 
 /**
  * SettingsScreen - Tela de configurações da aplicação
@@ -25,15 +25,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    themeViewModel: ThemeViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    val themeManager = remember { ThemeManager(context) }
-    val coroutineScope = rememberCoroutineScope()
-
     // Observar estado do dark mode
-    val isDarkMode = themeManager.isDarkModeFlow().collectAsState(initial = false)
-    val isDynamicColors = themeManager.isDynamicColorsFlow().collectAsState(initial = true)
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -62,36 +58,16 @@ fun SettingsScreen(
                 SettingToggle(
                     title = "Modo Escuro",
                     subtitle = "Alternar entre tema claro e escuro",
-                    isChecked = isDarkMode.value,
+                    isChecked = isDarkMode,
                     icon = {
                         Icon(
-                            imageVector = if (isDarkMode.value) Icons.Default.DarkMode else Icons.Default.LightMode,
-                            contentDescription = "Ícone de tema"
+                            imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                            contentDescription = "Ícone de tema",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     },
-                    onToggle = { enabled ->
-                        coroutineScope.launch {
-                            themeManager.setDarkMode(enabled)
-                        }
-                    }
-                )
-            }
-
-            item {
-                SettingToggle(
-                    title = "Cores Dinâmicas",
-                    subtitle = "Usar cores do Material You (Android 12+)",
-                    isChecked = isDynamicColors.value,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.LightMode,
-                            contentDescription = "Ícone de cores"
-                        )
-                    },
-                    onToggle = { enabled ->
-                        coroutineScope.launch {
-                            themeManager.setDynamicColors(enabled)
-                        }
+                    onToggle = { _ ->
+                        themeViewModel.toggleTheme()
                     }
                 )
             }

@@ -42,11 +42,11 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
-    implementation(project(":data"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -103,6 +103,9 @@ dependencies {
     // System UI Controller for Status Bar customization
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
 
+    // Timber - Better logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
     // Testing Dependencies
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
@@ -123,15 +126,13 @@ dependencies {
 // Detekt Configuration
 detekt {
     toolVersion = "1.23.1"
-    config = files("detekt.yml")
+    config.setFrom(files("$rootDir/detekt.yml"))
+    buildUponDefaultConfig = true
+    allRules = false
     reports {
         html.required.set(true)
-        xml.required.set(true)
+        xml.required.set(false)
         sarif.required.set(false)
+        txt.required.set(false)
     }
-}
-
-// Desabilitar verificação Detekt para build passar
-tasks.named("detekt") {
-    enabled = false
 }

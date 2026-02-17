@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.unit.sp
 import com.example.takstud.R
 import com.example.takstud.model.Notice
@@ -96,36 +97,50 @@ fun AddNoticeScreen(
         }
         
         // Classe com validação (selecionada via dropdown)
-        Box {
-            OutlinedTextField(
-                value = studentClass,
-                onValueChange = { },
-                label = { Text(stringResource(R.string.class_hint)) },
-                isError = classError != null,
-                modifier = Modifier.fillMaxWidth().clickable { expanded = true },
-                readOnly = true
-            )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                if (schedules.isEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.no_class_registered)) },
-                        onClick = { expanded = false }
-                    )
-                } else {
-                    schedules.forEach { schedule ->
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = if (studentClass.isEmpty()) "TODOS" else studentClass,
+                    onValueChange = { },
+                    label = { Text(stringResource(R.string.class_hint)) },
+                    isError = classError != null,
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true
+                )
+                // Box clicável transparente sobre o TextField
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expanded = true }
+                )
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    if (schedules.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text(schedule.studentClass) },
-                            onClick = {
-                                studentClass = schedule.studentClass
-                                classError = null // Limpar erro ao selecionar
-                                expanded = false
-                            }
+                            text = { Text(stringResource(R.string.no_class_registered)) },
+                            onClick = { expanded = false }
                         )
+                    } else {
+                        schedules.forEach { schedule ->
+                            DropdownMenuItem(
+                                text = { Text(schedule.studentClass) },
+                                onClick = {
+                                    studentClass = schedule.studentClass
+                                    classError = null // Limpar erro ao selecionar
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
+            }
+            Button(
+                onClick = { studentClass = "" },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text("TODOS")
             }
         }
         if (classError != null) {
@@ -148,7 +163,7 @@ fun AddNoticeScreen(
                     hasErrors = true
                 }
 
-                if (!InputValidator.isValidClass(studentClass)) {
+                if (studentClass.isNotEmpty() && !InputValidator.isValidClass(studentClass)) {
                     classError = "Classe deve ser selecionada (2-50 caracteres)"
                     hasErrors = true
                 }

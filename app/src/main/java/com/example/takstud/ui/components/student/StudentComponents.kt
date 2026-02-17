@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -96,7 +97,7 @@ fun StudentCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.School,
+                        imageVector = Icons.Filled.School,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -115,7 +116,7 @@ fun StudentCard(
                     ) {
                         if (student.academicInfo.gpa > 0) {
                             StatChip(
-                                icon = Icons.Default.Grade,
+                                icon = Icons.Filled.Grade,
                                 label = "%.1f".format(student.academicInfo.gpa),
                                 color = when {
                                     student.academicInfo.gpa >= 7.0 -> Color(0xFF4CAF50)
@@ -127,7 +128,7 @@ fun StudentCard(
 
                         if (student.academicInfo.attendanceRate > 0) {
                             StatChip(
-                                icon = Icons.Default.EventAvailable,
+                                icon = Icons.Filled.EventAvailable,
                                 label = "${student.academicInfo.attendanceRate.toInt()}%",
                                 color = when {
                                     student.academicInfo.attendanceRate >= 75.0 -> Color(0xFF4CAF50)
@@ -149,7 +150,7 @@ fun StudentCard(
             ) {
                 if (student.academicInfo.isScholarship) {
                     Icon(
-                        imageVector = Icons.Default.CardGiftcard,
+                        imageVector = Icons.Filled.CardGiftcard,
                         contentDescription = "Bolsista",
                         modifier = Modifier.size(20.dp),
                         tint = Color(0xFFFF9800)
@@ -158,7 +159,7 @@ fun StudentCard(
 
                 if (student.hasSpecialNeeds()) {
                     Icon(
-                        imageVector = Icons.Default.AccessibleForward,
+                        imageVector = Icons.AutoMirrored.Filled.AccessibleForward,
                         contentDescription = "Necessidades especiais",
                         modifier = Modifier.size(20.dp),
                         tint = Color(0xFF2196F3)
@@ -316,7 +317,7 @@ fun GuardianCard(
                             label = { Text("Resp. Financeiro") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.AttachMoney,
+                                    imageVector = Icons.Filled.AttachMoney,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -336,21 +337,21 @@ fun GuardianCard(
             ) {
                 if (guardian.phone.isNotBlank()) {
                     InfoRow(
-                        icon = Icons.Default.Phone,
+                        icon = Icons.Filled.Phone,
                         label = guardian.getFormattedPhone()
                     )
                 }
 
                 if (guardian.email.isNotBlank()) {
                     InfoRow(
-                        icon = Icons.Default.Email,
+                        icon = Icons.Filled.Email,
                         label = guardian.email
                     )
                 }
 
                 if (guardian.occupation.isNotBlank()) {
                     InfoRow(
-                        icon = Icons.Default.Work,
+                        icon = Icons.Filled.Work,
                         label = guardian.occupation
                     )
                 }
@@ -366,7 +367,7 @@ fun GuardianCard(
                     if (onEdit != null) {
                         IconButton(onClick = onEdit) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
+                                imageVector = Icons.Filled.Edit,
                                 contentDescription = "Editar"
                             )
                         }
@@ -375,7 +376,7 @@ fun GuardianCard(
                     if (onDelete != null) {
                         IconButton(onClick = onDelete) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
+                                imageVector = Icons.Filled.Delete,
                                 contentDescription = "Remover",
                                 tint = MaterialTheme.colorScheme.error
                             )
@@ -469,7 +470,7 @@ fun TimelineEventCard(
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
+                                imageVector = Icons.Filled.Delete,
                                 contentDescription = "Remover",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.error
@@ -550,7 +551,7 @@ fun StudentStatsCard(
                     StatItem(
                         label = "Média Geral",
                         value = "%.2f".format(stats.averageGrade),
-                        icon = Icons.Default.Grade,
+                        icon = Icons.Filled.Grade,
                         color = when {
                             stats.averageGrade >= 7.0 -> Color(0xFF4CAF50)
                             stats.averageGrade >= 5.0 -> Color(0xFFFFC107)
@@ -560,19 +561,19 @@ fun StudentStatsCard(
                     StatItem(
                         label = "Maior Nota",
                         value = "%.2f".format(stats.highestGrade),
-                        icon = Icons.Default.TrendingUp,
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
                         color = Color(0xFF4CAF50)
                     ),
                     StatItem(
                         label = "Menor Nota",
                         value = "%.2f".format(stats.lowestGrade),
-                        icon = Icons.Default.TrendingDown,
+                        icon = Icons.AutoMirrored.Filled.TrendingDown,
                         color = Color(0xFFF44336)
                     )
                 )
             )
 
-            Divider()
+            HorizontalDivider()
 
             // Attendance
             StatsSection(
@@ -581,7 +582,7 @@ fun StudentStatsCard(
                     StatItem(
                         label = "Taxa de Presença",
                         value = "${stats.attendanceRate.toInt()}%",
-                        icon = Icons.Default.EventAvailable,
+                        icon = Icons.Filled.EventAvailable,
                         color = when {
                             stats.attendanceRate >= 75.0 -> Color(0xFF4CAF50)
                             stats.attendanceRate >= 50.0 -> Color(0xFFFFC107)
@@ -591,19 +592,19 @@ fun StudentStatsCard(
                     StatItem(
                         label = "Aulas Presentes",
                         value = "${stats.attendedClasses}",
-                        icon = Icons.Default.Check,
+                        icon = Icons.Filled.Check,
                         color = Color(0xFF4CAF50)
                     ),
                     StatItem(
                         label = "Faltas",
                         value = "${stats.absentClasses}",
-                        icon = Icons.Default.Close,
+                        icon = Icons.Filled.Close,
                         color = Color(0xFFF44336)
                     )
                 )
             )
 
-            Divider()
+            HorizontalDivider()
 
             // Tasks
             StatsSection(
@@ -612,7 +613,7 @@ fun StudentStatsCard(
                     StatItem(
                         label = "Taxa de Conclusão",
                         value = "${stats.taskCompletionRate.toInt()}%",
-                        icon = Icons.Default.Assignment,
+                        icon = Icons.AutoMirrored.Filled.Assignment,
                         color = when {
                             stats.taskCompletionRate >= 75.0 -> Color(0xFF4CAF50)
                             stats.taskCompletionRate >= 50.0 -> Color(0xFFFFC107)
@@ -622,13 +623,13 @@ fun StudentStatsCard(
                     StatItem(
                         label = "Concluídas",
                         value = "${stats.completedTasks}",
-                        icon = Icons.Default.CheckCircle,
+                        icon = Icons.Filled.CheckCircle,
                         color = Color(0xFF4CAF50)
                     ),
                     StatItem(
                         label = "Pendentes",
                         value = "${stats.pendingTasks}",
-                        icon = Icons.Default.PendingActions,
+                        icon = Icons.Filled.PendingActions,
                         color = Color(0xFFFFC107)
                     )
                 )
@@ -716,7 +717,7 @@ fun EmptyStudentList(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.PersonOff,
+                imageVector = Icons.Filled.PersonOff,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)

@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +42,7 @@ fun StudentTaskSubmissionScreen(
                 title = { Text("Detalhes da Tarefa") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 }
             )
@@ -64,7 +64,7 @@ fun StudentTaskSubmissionScreen(
                     },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Enviar Resposta")
                 }
@@ -120,14 +120,14 @@ fun StudentTaskSubmissionScreen(
                             }
                         }
 
-                        Divider()
+                        HorizontalDivider()
 
                         // Description
                         Text("Instruções", style = MaterialTheme.typography.titleMedium)
                         Text(task.description, style = MaterialTheme.typography.bodyLarge)
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Divider()
+                        HorizontalDivider()
 
                         // Submission Area
                         Text("Sua Resposta", style = MaterialTheme.typography.titleMedium)
@@ -144,7 +144,7 @@ fun StudentTaskSubmissionScreen(
                             onClick = { /* TODO: Attach file */ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.AttachFile, contentDescription = null)
+                            Icon(Icons.Filled.AttachFile, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Anexar Arquivo")
                         }

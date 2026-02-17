@@ -75,7 +75,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(painterResource(R.drawable.takstud_logo), "TakStud Logo", Modifier.size(150.dp))
+        Image(painterResource(R.drawable.ic_launcher_foreground), "TakStud Logo", Modifier.size(150.dp))
         Spacer(Modifier.height(32.dp))
 
         // Campo de entrada com validação

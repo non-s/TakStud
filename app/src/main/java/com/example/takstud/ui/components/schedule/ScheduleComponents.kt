@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -96,10 +97,10 @@ fun TimeSlotCard(
                 // Ícone do tipo
                 Icon(
                     imageVector = when {
-                        timeSlot.isBreak -> Icons.Default.Coffee
-                        timeSlot.isSpecialEvent -> Icons.Default.Event
-                        timeSlot.isSubstitute -> Icons.Default.SwapHoriz
-                        else -> Icons.Default.MenuBook
+                        timeSlot.isBreak -> Icons.Filled.Coffee
+                        timeSlot.isSpecialEvent -> Icons.Filled.Event
+                        timeSlot.isSubstitute -> Icons.Filled.SwapHoriz
+                        else -> Icons.AutoMirrored.Filled.MenuBook
                     },
                     contentDescription = null,
                     tint = color,
@@ -128,7 +129,7 @@ fun TimeSlotCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Person,
+                        imageVector = Icons.Filled.Person,
                         contentDescription = null,
                         tint = DarkGray,
                         modifier = Modifier.size(14.dp)
@@ -151,7 +152,7 @@ fun TimeSlotCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Room,
+                            imageVector = Icons.Filled.Room,
                             contentDescription = null,
                             tint = DarkGray,
                             modifier = Modifier.size(14.dp)
@@ -171,7 +172,7 @@ fun TimeSlotCard(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Divider()
+                    HorizontalDivider()
 
                     // Notas
                     if (timeSlot.notes.isNotBlank()) {
@@ -194,7 +195,7 @@ fun TimeSlotCard(
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
                             ) {
-                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Editar", fontSize = 12.sp)
                             }
@@ -204,7 +205,7 @@ fun TimeSlotCard(
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Remover", fontSize = 12.sp)
                             }
@@ -277,7 +278,7 @@ fun SubjectCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Person,
+                            imageVector = Icons.Filled.Person,
                             contentDescription = null,
                             tint = DarkGray,
                             modifier = Modifier.size(14.dp)
@@ -320,7 +321,7 @@ fun SubjectCard(
                     onClick = onEdit,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Editar")
                 }
@@ -330,7 +331,7 @@ fun SubjectCard(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Remover")
                 }
@@ -395,7 +396,7 @@ fun ConflictCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Warning,
+                    imageVector = Icons.Filled.Warning,
                     contentDescription = null,
                     tint = color
                 )
@@ -463,28 +464,28 @@ fun ScheduleStatsCard(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatItem(
-                icon = Icons.Default.Class,
+                icon = Icons.Filled.Class,
                 value = stats.totalSlots.toString(),
                 label = "Aulas",
                 color = AccentBlue
             )
 
             StatItem(
-                icon = Icons.Default.MenuBook,
+                icon = Icons.AutoMirrored.Filled.MenuBook,
                 value = stats.uniqueSubjects.toString(),
                 label = "Disciplinas",
                 color = SuccessGreen
             )
 
             StatItem(
-                icon = Icons.Default.Schedule,
+                icon = Icons.Filled.Schedule,
                 value = "%.1fh".format(stats.totalWeeklyHours),
                 label = "Horas/Sem",
                 color = WarningYellow
             )
 
             StatItem(
-                icon = Icons.Default.CalendarToday,
+                icon = Icons.Filled.CalendarToday,
                 value = stats.daysWithClasses.toString(),
                 label = "Dias",
                 color = Color(0xFF9C27B0)

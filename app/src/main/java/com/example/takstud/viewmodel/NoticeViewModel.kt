@@ -22,7 +22,7 @@ class NoticeViewModel @Inject constructor(
 
     fun getNoticesForStudent(student: Student): StateFlow<List<Notice>> {
         return notices.map { list ->
-            list.filter { it.studentClass == student.studentClass || it.studentClass == "ALL" }
+            list.filter { it.studentClass == student.studentClass || it.studentClass.isEmpty() }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 

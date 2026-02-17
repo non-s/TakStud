@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.takstud.model.Role
 import com.example.takstud.ui.HomeScreen
 import com.example.takstud.ui.RequireRole
@@ -17,17 +19,29 @@ import com.example.takstud.ui.login.LoginScreen
 import com.example.takstud.ui.login.ParentLoginScreen
 import com.example.takstud.ui.login.TeacherLoginScreen
 import com.example.takstud.ui.parent.ParentScreen
-import com.example.takstud.ui.teacher.*
+import com.example.takstud.ui.parent.StudentSelectionScreen
+import com.example.takstud.ui.parent.ParentNoticeListScreen
+import com.example.takstud.ui.parent.ParentScheduleListScreen
+import com.example.takstud.ui.parent.ParentTaskListScreen
+import com.example.takstud.ui.teacher.AddNoticeScreen
+import com.example.takstud.ui.teacher.AddTaskScreen
+import com.example.takstud.ui.teacher.ManageScheduleScreen
+import com.example.takstud.ui.teacher.NoticeListScreen
+import com.example.takstud.ui.teacher.ScheduleDetailsScreen
+import com.example.takstud.ui.teacher.SchedulesListScreen
+import com.example.takstud.ui.teacher.TeacherScreen
+import com.example.takstud.ui.teacher.TaskListScreen
 import com.example.takstud.ui.theme.TakStudTheme
-import com.example.takstud.viewmodel.AttendanceViewModel
 import com.example.takstud.viewmodel.AuthViewModel
 import com.example.takstud.viewmodel.NoticeViewModel
 import com.example.takstud.viewmodel.ScheduleViewModel
-import com.example.takstud.viewmodel.StudentViewModel
 import com.example.takstud.viewmodel.TaskViewModel
+import com.example.takstud.viewmodel.ThemeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.takstud.model.task.TaskExtended
 import com.example.takstud.model.task.toTask
 import com.example.takstud.model.task.toTaskExtended
+import com.example.takstud.viewmodel.ParentViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -36,7 +50,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            TakStudTheme {
+            val themeViewModel: ThemeViewModel = viewModel()
+            val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+
+            TakStudTheme(darkTheme = isDarkMode) {
                 TakStudApp()
             }
         }
@@ -46,11 +63,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TakStudApp(
     taskViewModel: TaskViewModel = hiltViewModel(),
-    studentViewModel: StudentViewModel = hiltViewModel(),
     scheduleViewModel: ScheduleViewModel = hiltViewModel(),
     noticeViewModel: NoticeViewModel = hiltViewModel(),
-    attendanceViewModel: AttendanceViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    parentViewModel: ParentViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val navigationActions = remember(navController) { TakStudNavigationActions(navController) }
@@ -60,7 +76,7 @@ fun TakStudApp(
         composable(TakStudDestinations.HOME_ROUTE) {
             HomeScreen(
                 onProfessorClick = { navigationActions.navigateToTeacherLogin() },
-                onAlunoClick = { navigationActions.navigateToParentLogin() }
+                onAlunoClick = { navigationActions.navigateToParent() }
             )
         }
 
@@ -72,29 +88,15 @@ fun TakStudApp(
             )
         }
 
-        // TELA LOGIN RESPONSÁVEL (NOVO)
-        composable(TakStudDestinations.PARENT_LOGIN_ROUTE) {
-            ParentLoginScreen(
-                onLoginSuccess = { studentId ->
-                    navigationActions.navigateToParent(studentId)
-                },
-                onBackClick = { navigationActions.onBack() }
-            )
-        }
 
         // TELA LOGIN ANTIGO (mantém compatibilidade)
         composable(TakStudDestinations.LOGIN_ROUTE) {
             LoginScreen(
-                onTeacherLogin = { navigationActions.navigateToAdminLogin() },
+                onTeacherLogin = { navigationActions.navigateToTeacherLogin() },
                 onParentLoginSuccess = {
-                    // TODO: Navigate to parent screen with student ID from login result
-                    navigationActions.navigateToLogin()
+                    // Login de responsável concluído - redireciona para tela inicial
+                    navigationActions.navigateToHome()
                 }
-            )
-        }
-        composable(TakStudDestinations.ADMIN_LOGIN_ROUTE) {
-            AdminLoginScreen(
-                onAdminLoginSuccess = { navigationActions.navigateToTeacher() }
             )
         }
         composable(TakStudDestinations.TEACHER_ROUTE) {
@@ -103,37 +105,58 @@ fun TakStudApp(
                     onManageTasks = { navController.navigate(TakStudDestinations.TASK_LIST_ROUTE) },
                     onManageNotices = { navController.navigate(TakStudDestinations.NOTICE_LIST_ROUTE) },
                     onManageSchedules = { navController.navigate(TakStudDestinations.SCHEDULES_LIST_ROUTE) },
-                    onManageStudents = { navController.navigate(TakStudDestinations.MANAGE_STUDENTS_ROUTE) },
-                    onManageAttendance = { navController.navigate(TakStudDestinations.ATTENDANCE_ROUTE) },
                     onLogout = { navigationActions.navigateToHome() }
                 )
             }
         }
-        composable("${TakStudDestinations.PARENT_ROUTE}/{studentId}") { backStackEntry ->
-            RequireRole(role = Role.PARENT, fallbackRoute = { navigationActions.navigateToHome() }) {
-                val studentId = backStackEntry.arguments?.getString("studentId")
-                val student = studentViewModel.students.collectAsState().value.find { it.id == studentId }
-                if (student != null) {
-                    ParentScreen(
-                        student = student,
-                        tasks = taskViewModel.getTasksForStudent(student).collectAsState().value.map { it.toTask() },
-                        notices = noticeViewModel.getNoticesForStudent(student).collectAsState().value,
-                        schedules = scheduleViewModel.getSchedulesForStudent(student).collectAsState().value,
-                        grades = taskViewModel.getGradesForStudent(student).collectAsState().value,
-                        attendance = attendanceViewModel.getAttendanceForStudent(student).collectAsState().value,
-                        onLogout = { navigationActions.navigateToHome() },
-                        onScheduleClick = { schedule -> navController.navigate("${TakStudDestinations.SCHEDULE_DETAILS_ROUTE}/${schedule.id}/${student.id}") }
-                    )
-                }
-            }
+        composable(TakStudDestinations.PARENT_ROUTE) {
+            val availableClasses by parentViewModel.availableClasses.collectAsState()
+            val selectedClass by parentViewModel.selectedClass.collectAsState()
+
+            ParentScreen(
+                availableClasses = availableClasses,
+                selectedClass = selectedClass,
+                onClassSelected = { parentViewModel.selectClass(it) },
+                onNavigateToTasks = { navigationActions.navigateToParentTaskList() },
+                onNavigateToNotices = { navigationActions.navigateToParentNoticeList() },
+                onNavigateToSchedules = { navigationActions.navigateToParentScheduleList() },
+                onLogout = { navigationActions.navigateToHome() }
+            )
         }
+
+        composable(TakStudDestinations.PARENT_TASK_LIST_ROUTE) {
+            val filteredTasks by parentViewModel.filteredTasks.collectAsState()
+            ParentTaskListScreen(
+                tasks = filteredTasks,
+                onBack = { navigationActions.onBack() }
+            )
+        }
+
+        composable(TakStudDestinations.PARENT_NOTICE_LIST_ROUTE) {
+            val filteredNotices by parentViewModel.filteredNotices.collectAsState()
+            ParentNoticeListScreen(
+                notices = filteredNotices,
+                onBack = { navigationActions.onBack() }
+            )
+        }
+
+        composable(TakStudDestinations.PARENT_SCHEDULE_LIST_ROUTE) {
+            val filteredSchedules by parentViewModel.filteredSchedules.collectAsState()
+            ParentScheduleListScreen(
+                schedules = filteredSchedules,
+                onBack = { navigationActions.onBack() },
+                onScheduleClick = { schedule ->
+                    navController.navigate("${TakStudDestinations.SCHEDULE_DETAILS_ROUTE}/${schedule.id}/null")
+                }
+            )
+        }
+
         composable(TakStudDestinations.TASK_LIST_ROUTE) {
              TaskListScreen(
                 tasks = taskViewModel.tasks.collectAsState().value.map { it.toTask() },
                 onAddTask = { navController.navigate("${TakStudDestinations.ADD_TASK_ROUTE}/null") },
                 onTaskClick = { task -> navController.navigate("${TakStudDestinations.ADD_TASK_ROUTE}/${task.id}") },
                 onDeleteTask = { task -> taskViewModel.deleteTask(task.toTaskExtended()) },
-                onManageGrades = { task -> navController.navigate("${TakStudDestinations.MANAGE_GRADES_ROUTE}/${task.id}") },
                 onBack = { navigationActions.onBack() }
             )
         }
@@ -146,19 +169,6 @@ fun TakStudApp(
                 onSave = { t -> taskViewModel.saveTask(t.toTaskExtended()) { navController.popBackStack() } },
                 onBack = { navigationActions.onBack() }
             )
-        }
-        composable("${TakStudDestinations.MANAGE_GRADES_ROUTE}/{taskId}") { backStackEntry ->
-            val taskId = backStackEntry.arguments?.getString("taskId")
-            val task = taskViewModel.tasks.collectAsState().value.find { it.id == taskId }?.toTask()
-            if (task != null) {
-                 ManageGradesScreen(
-                    task = task,
-                    students = studentViewModel.getStudentsForClass(task.studentClass).collectAsState().value,
-                    grades = taskViewModel.getGradesForTask(task.id).collectAsState().value,
-                    onSaveGrade = { grade -> taskViewModel.saveGrade(grade) },
-                    onBack = { navigationActions.onBack() }
-                )
-            }
         }
          composable(TakStudDestinations.NOTICE_LIST_ROUTE) {
             NoticeListScreen(
@@ -179,23 +189,17 @@ fun TakStudApp(
                 onBack = { navigationActions.onBack() }
             )
         }
-        composable(TakStudDestinations.MANAGE_STUDENTS_ROUTE) {
-            ManageStudentsScreen(
-                students = studentViewModel.students.collectAsState().value,
-                classesByPeriod = scheduleViewModel.classesByPeriod.collectAsState().value,
-                onRegisterStudent = { name, ra, className -> studentViewModel.registerStudent(name, ra, className) },
-                onDeleteStudent = { student -> studentViewModel.deleteStudent(student) },
-                onBack = { navigationActions.onBack() }
-            )
-        }
-        
+
         composable(TakStudDestinations.SCHEDULES_LIST_ROUTE) {
             SchedulesListScreen(
                 schedules = scheduleViewModel.schedules.collectAsState().value,
                 onAddSchedule = { navController.navigate("${TakStudDestinations.MANAGE_SCHEDULE_ROUTE}/null") },
                 onScheduleClick = { schedule -> navController.navigate("${TakStudDestinations.MANAGE_SCHEDULE_ROUTE}/${schedule.id}") },
                 onDeleteSchedule = { schedule -> scheduleViewModel.deleteSchedule(schedule) },
-                onAddMissingSchedules = { /* TODO: Implement add missing schedules */ },
+                onAddMissingSchedules = {
+                    // Funcionalidade para adicionar horários faltantes
+                    // será implementada quando necessário
+                },
                 onBack = { navigationActions.onBack() }
             )
         }
@@ -208,48 +212,22 @@ fun TakStudApp(
                 onBack = { navigationActions.onBack() }
             )
         }
-         composable("${TakStudDestinations.SCHEDULE_DETAILS_ROUTE}/{scheduleId}/{studentId}") { backStackEntry ->
+        composable(
+            route = "${TakStudDestinations.SCHEDULE_DETAILS_ROUTE}/{scheduleId}/{studentId}",
+            arguments = listOf(
+                navArgument("scheduleId") { type = NavType.StringType },
+                navArgument("studentId") { nullable = true }
+            )
+        ) { backStackEntry ->
             val scheduleId = backStackEntry.arguments?.getString("scheduleId")
             val studentId = backStackEntry.arguments?.getString("studentId")
             val schedule = scheduleViewModel.schedules.collectAsState().value.find { it.id == scheduleId }
-            val student = studentViewModel.students.collectAsState().value.find { it.id == studentId }
-            if (schedule != null && student != null) {
-                 ScheduleDetailsScreen(
+            if (schedule != null) {
+                ScheduleDetailsScreen(
                     schedule = schedule,
                     onBack = { navigationActions.onBack() }
-                ) 
-            }
-        }
-        composable(TakStudDestinations.ATTENDANCE_ROUTE) {
-            AttendanceScreen(
-                classesByPeriod = scheduleViewModel.classesByPeriod.collectAsState().value,
-                onTakeAttendance = { studentClass, date ->
-                    attendanceViewModel.setAttendanceData(studentClass, date)
-                    navController.navigate(TakStudDestinations.TAKE_ATTENDANCE_ROUTE)
-                },
-                onBack = { navigationActions.onBack() }
-            )
-        }
-        composable(TakStudDestinations.TAKE_ATTENDANCE_ROUTE) {
-            val studentClass = attendanceViewModel.selectedClassForAttendance.collectAsState().value
-            val date = attendanceViewModel.selectedDateForAttendance.collectAsState().value
-
-            if (studentClass.isNotBlank() && date.isNotBlank()) {
-                TakeAttendanceScreen(
-                    studentClass = studentClass,
-                    date = date,
-                    students = studentViewModel.getStudentsForClass(studentClass).collectAsState().value,
-                    records = attendanceViewModel.getAttendanceForClassByDate(studentClass, date).collectAsState().value,
-                    onSaveAttendance = { record -> attendanceViewModel.saveAttendanceRecord(record) },
-                    onBack = {
-                        attendanceViewModel.clearAttendanceData()
-                        navigationActions.onBack()
-                    }
                 )
-            } else {
-                navigationActions.onBack()
             }
         }
-
     }
 }

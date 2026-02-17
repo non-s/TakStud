@@ -1,45 +1,32 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.takstud.ui.teacher
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.takstud.R
 import com.example.takstud.model.Schedule
 import com.example.takstud.model.Task
+import com.example.takstud.ui.theme.*
 import com.example.takstud.util.InputValidator
 
 /**
- * Task creation and editing screen for teachers.
- * Validates all task fields before allowing submission.
- *
- * @param modifier Composable modifier
- * @param taskToEdit Task to edit (null for new task)
- * @param schedules Available schedules/classes for selection
- * @param onSave Callback when task is saved with validation
- * @param onBack Callback to return to previous screen
+ * AddTaskScreen Premium - Criação/edição de tarefas moderna
  */
 @Composable
 fun AddTaskScreen(
@@ -55,160 +42,329 @@ fun AddTaskScreen(
     var studentClass by remember(taskToEdit) { mutableStateOf(taskToEdit?.studentClass ?: "") }
     var expanded by remember { mutableStateOf(false) }
 
-    // Validation error states
+    // Validation errors
     var titleError by remember { mutableStateOf<String?>(null) }
     var descriptionError by remember { mutableStateOf<String?>(null) }
     var dueDateError by remember { mutableStateOf<String?>(null) }
     var classError by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(if (taskToEdit == null) stringResource(R.string.add_task) else stringResource(R.string.edit_task), style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(16.dp))
+    val isEditing = taskToEdit != null
 
-        // Título da tarefa com validação
-        OutlinedTextField(
-            value = title,
-            onValueChange = {
-                title = it
-                // Validar conforme digita
-                titleError = if (it.isNotEmpty() && !InputValidator.isValidTitle(it)) {
-                    "Título deve ter 3-200 caracteres"
-                } else null
-            },
-            label = { Text(stringResource(R.string.title_hint)) },
-            isError = titleError != null,
-            modifier = Modifier.fillMaxWidth()
-        )
-        if (titleError != null) {
-            Text(titleError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
-        }
-
-        // Descrição da tarefa com validação
-        OutlinedTextField(
-            value = description,
-            onValueChange = {
-                description = it
-                descriptionError = if (it.isNotEmpty() && !InputValidator.isValidDescription(it)) {
-                    "Descrição deve ter no máximo 5000 caracteres"
-                } else null
-            },
-            label = { Text(stringResource(R.string.description_hint)) },
-            isError = descriptionError != null,
-            modifier = Modifier.fillMaxWidth()
-        )
-        if (descriptionError != null) {
-            Text(descriptionError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
-        }
-
-        // Data de entrega com validação
-        OutlinedTextField(
-            value = dueDate,
-            onValueChange = {
-                dueDate = it
-                dueDateError = if (it.isNotEmpty() && !InputValidator.isValidDate(it)) {
-                    "Formato: dd/MM/yyyy"
-                } else null
-            },
-            label = { Text(stringResource(R.string.due_date_hint)) },
-            isError = dueDateError != null,
-            modifier = Modifier.fillMaxWidth()
-        )
-        if (dueDateError != null) {
-            Text(dueDateError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
-        }
-
-        // Classe com validação (selecionada via dropdown)
-        Box {
-            OutlinedTextField(
-                value = studentClass,
-                onValueChange = { },
-                label = { Text(stringResource(R.string.class_hint)) },
-                isError = classError != null,
-                modifier = Modifier.fillMaxWidth().clickable { expanded = true },
-                readOnly = true
-            )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                if (schedules.isEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.no_class_registered)) },
-                        onClick = { expanded = false }
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        AccentPurple.copy(alpha = 0.03f),
+                        Neutral50
                     )
-                } else {
-                    schedules.forEach { schedule ->
-                        DropdownMenuItem(
-                            text = { Text(schedule.studentClass) },
-                            onClick = {
-                                studentClass = schedule.studentClass
-                                classError = null // Limpar erro ao selecionar
-                                expanded = false
-                            }
+                )
+            )
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(AccentPurple, Color(0xFF7C3AED))
+                        )
+                    )
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Default.ArrowBack,
+                            "Voltar",
+                            tint = Color.White
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = if (isEditing) "Editar Tarefa" else "Nova Tarefa",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (isEditing) "Atualize as informações" else "Preencha os dados",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
-        }
-        if (classError != null) {
-            Text(classError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
-        }
 
-        Spacer(Modifier.weight(1f))
-
-        // Botão salvar com validação completa
-        Button(
-            onClick = {
-                // Validar todos os campos
-                var hasErrors = false
-
-                if (!InputValidator.isValidTitle(title)) {
-                    titleError = "Título deve ter 3-200 caracteres"
-                    hasErrors = true
+            // Form
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Título
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Título da Tarefa",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Neutral700,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = {
+                                title = it
+                                titleError = if (it.isNotEmpty() && !InputValidator.isValidTitle(it)) {
+                                    "Título deve ter 3-200 caracteres"
+                                } else null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Ex: Trabalho de Matemática") },
+                            isError = titleError != null,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentPurple,
+                                unfocusedBorderColor = Neutral300
+                            )
+                        )
+                        AnimatedVisibility(visible = titleError != null) {
+                            Text(
+                                text = titleError ?: "",
+                                color = Error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
                 }
 
-                if (!InputValidator.isValidDescription(description)) {
-                    descriptionError = "Descrição deve ter no máximo 5000 caracteres"
-                    hasErrors = true
+                // Descrição
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Descrição",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Neutral700,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = {
+                                description = it
+                                descriptionError = if (it.isNotEmpty() && !InputValidator.isValidDescription(it)) {
+                                    "Descrição deve ter no máximo 5000 caracteres"
+                                } else null
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            placeholder = { Text("Descreva a tarefa...") },
+                            isError = descriptionError != null,
+                            shape = RoundedCornerShape(12.dp),
+                            maxLines = 5,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentPurple,
+                                unfocusedBorderColor = Neutral300
+                            )
+                        )
+                        AnimatedVisibility(visible = descriptionError != null) {
+                            Text(
+                                text = descriptionError ?: "",
+                                color = Error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
                 }
 
-                if (!InputValidator.isValidDate(dueDate)) {
-                    dueDateError = "Formato: dd/MM/yyyy"
-                    hasErrors = true
+                // Data de Entrega
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Data de Entrega",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Neutral700,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = dueDate,
+                            onValueChange = {
+                                dueDate = it
+                                dueDateError = if (it.isNotEmpty() && !InputValidator.isValidDate(it)) {
+                                    "Formato: dd/MM/yyyy"
+                                } else null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("dd/MM/yyyy") },
+                            isError = dueDateError != null,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentPurple,
+                                unfocusedBorderColor = Neutral300
+                            )
+                        )
+                        AnimatedVisibility(visible = dueDateError != null) {
+                            Text(
+                                text = dueDateError ?: "",
+                                color = Error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
                 }
 
-                if (!InputValidator.isValidClass(studentClass)) {
-                    classError = "Classe deve ser selecionada (2-50 caracteres)"
-                    hasErrors = true
+                // Turma
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Turma",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Neutral700,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box {
+                            OutlinedTextField(
+                                value = studentClass,
+                                onValueChange = { },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Selecione a turma") },
+                                isError = classError != null,
+                                readOnly = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentPurple,
+                                    unfocusedBorderColor = Neutral300
+                                )
+                            )
+                            // Box clicável transparente sobre o TextField
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable { expanded = true }
+                            )
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                if (schedules.isEmpty()) {
+                                    DropdownMenuItem(
+                                        text = { Text("Nenhuma turma cadastrada") },
+                                        onClick = { expanded = false }
+                                    )
+                                } else {
+                                    schedules.forEach { schedule ->
+                                        DropdownMenuItem(
+                                            text = { Text(schedule.studentClass) },
+                                            onClick = {
+                                                studentClass = schedule.studentClass
+                                                classError = null
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        AnimatedVisibility(visible = classError != null) {
+                            Text(
+                                text = classError ?: "",
+                                color = Error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
                 }
 
-                if (!hasErrors) {
-                    val task = taskToEdit?.copy(
-                        title = title,
-                        description = description,
-                        dueDate = dueDate,
-                        studentClass = studentClass
-                    ) ?: Task(
-                        title = title,
-                        description = description,
-                        dueDate = dueDate,
-                        studentClass = studentClass
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Botão Salvar
+                Button(
+                    onClick = {
+                        var hasErrors = false
+
+                        if (!InputValidator.isValidTitle(title)) {
+                            titleError = "Título deve ter 3-200 caracteres"
+                            hasErrors = true
+                        }
+                        if (!InputValidator.isValidDescription(description)) {
+                            descriptionError = "Descrição deve ter no máximo 5000 caracteres"
+                            hasErrors = true
+                        }
+                        if (!InputValidator.isValidDate(dueDate)) {
+                            dueDateError = "Formato: dd/MM/yyyy"
+                            hasErrors = true
+                        }
+                        if (!InputValidator.isValidClass(studentClass)) {
+                            classError = "Selecione uma turma"
+                            hasErrors = true
+                        }
+
+                        if (!hasErrors) {
+                            val task = taskToEdit?.copy(
+                                title = title,
+                                description = description,
+                                dueDate = dueDate,
+                                studentClass = studentClass
+                            ) ?: Task(
+                                title = title,
+                                description = description,
+                                dueDate = dueDate,
+                                studentClass = studentClass
+                            )
+                            onSave(task)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = title.isNotEmpty() && description.isNotEmpty() && 
+                              dueDate.isNotEmpty() && studentClass.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentPurple
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (isEditing) "Atualizar Tarefa" else "Criar Tarefa",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
-                    onSave(task)
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = titleError == null && descriptionError == null && dueDateError == null && classError == null && title.isNotEmpty()
-        ) {
-            Text(stringResource(R.string.save))
-        }
 
-        Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.back))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }

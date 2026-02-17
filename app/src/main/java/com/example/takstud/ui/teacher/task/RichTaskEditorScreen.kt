@@ -1,10 +1,11 @@
 package com.example.takstud.ui.teacher.task
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
@@ -17,7 +18,7 @@ import androidx.navigation.NavController
 import com.example.takstud.model.task.TaskExtended
 import com.example.takstud.model.task.TaskType
 import com.example.takstud.viewmodel.TaskViewModel
-import java.text.SimpleDateFormat
+import com.example.takstud.viewmodel.ScheduleViewModel
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,18 +26,25 @@ import java.util.*
 fun RichTaskEditorScreen(
     navController: NavController,
     taskId: String? = null,
-    viewModel: TaskViewModel = hiltViewModel()
+    taskViewModel: TaskViewModel = hiltViewModel(),
+    scheduleViewModel: ScheduleViewModel = hiltViewModel()
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var dueDate by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(TaskType.EXERCISE) }
-    var className by remember { mutableStateOf("") }
-    
+
+    val classesByPeriod by scheduleViewModel.classesByPeriod.collectAsState()
+    val allClasses = remember(classesByPeriod) {
+        classesByPeriod.values.flatten().distinct()
+    }
+    var isClassDropdownExpanded by remember { mutableStateOf(false) }
+    var selectedClassName by remember { mutableStateOf("") }
+
     // Load existing task if editing
     LaunchedEffect(taskId) {
         if (taskId != null) {
-            viewModel.loadTask(taskId)
+            taskViewModel.loadTask(taskId)
         }
     }
 
@@ -49,7 +57,7 @@ fun RichTaskEditorScreen(
                 title = { Text(if (taskId == null) "Nova Tarefa" else "Editar Tarefa") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
@@ -59,15 +67,15 @@ fun RichTaskEditorScreen(
                             title = title,
                             description = description,
                             type = selectedType,
-                            className = className,
+                            className = selectedClassName,
                             // TODO: Parse date properly
                             dueDate = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000 // +7 dias default
                         )
-                        viewModel.saveTask(newTask) {
+                        taskViewModel.saveTask(newTask) {
                             navController.popBackStack()
                         }
                     }) {
-                        Icon(Icons.Default.Check, contentDescription = "Salvar")
+                        Icon(Icons.Filled.Check, contentDescription = "Salvar")
                     }
                 }
             )
@@ -95,12 +103,44 @@ fun RichTaskEditorScreen(
                 minLines = 5
             )
 
-            OutlinedTextField(
-                value = className,
-                onValueChange = { className = it },
-                label = { Text("Turma (Ex: 9A)") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Box {
+                OutlinedTextField(
+                    value = selectedClassName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Turma") },
+                    placeholder = { Text("Selecione a turma") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // Box clicável transparente sobre o TextField
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { isClassDropdownExpanded = true }
+                )
+                DropdownMenu(
+                    expanded = isClassDropdownExpanded,
+                    onDismissRequest = { isClassDropdownExpanded = false }
+                ) {
+                    if (allClasses.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("Nenhuma turma disponível") },
+                            onClick = { isClassDropdownExpanded = false },
+                            enabled = false
+                        )
+                    } else {
+                        allClasses.forEach { className ->
+                            DropdownMenuItem(
+                                text = { Text(className) },
+                                onClick = {
+                                    selectedClassName = className
+                                    isClassDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             // Date Picker Simulator
             OutlinedTextField(
@@ -134,7 +174,7 @@ fun RichTaskEditorScreen(
             }
 
             // Attachments Section
-            Divider()
+            HorizontalDivider()
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -142,7 +182,7 @@ fun RichTaskEditorScreen(
             ) {
                 Text("Anexos", style = MaterialTheme.typography.titleMedium)
                 TextButton(onClick = { /* TODO: Open file picker */ }) {
-                    Icon(Icons.Default.AttachFile, contentDescription = null)
+                    Icon(Icons.Filled.AttachFile, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Adicionar")
                 }

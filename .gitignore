@@ -2,7 +2,6 @@
 .gradle/
 build/
 *.gradle
-gradle.properties
 local.properties
 
 # IDE

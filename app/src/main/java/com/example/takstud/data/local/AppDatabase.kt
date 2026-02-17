@@ -4,8 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.takstud.data.local.dao.*
-import com.example.takstud.data.local.entity.*
+
+import com.example.takstud.data.local.dao.EventDao
+import com.example.takstud.data.local.dao.NoticeDao
+import com.example.takstud.data.local.dao.NotificationDao
+import com.example.takstud.data.local.dao.ScheduleDao
+import com.example.takstud.data.local.dao.TaskDao
+import com.example.takstud.data.local.entity.EventEntity
+import com.example.takstud.data.local.entity.NoticeEntity
+import com.example.takstud.data.local.entity.NotificationEntity
+import com.example.takstud.data.local.entity.ScheduleEntity
+import com.example.takstud.data.local.entity.TaskEntity
 
 /**
  * AppDatabase - Room Database para armazenamento local offline
@@ -18,18 +27,10 @@ import com.example.takstud.data.local.entity.*
         TaskEntity::class,
         NoticeEntity::class,
         ScheduleEntity::class,
-        StudentEntity::class,
-        GradeEntity::class,
-        AttendanceEntity::class,
-        SyncQueueEntity::class,
-        SubjectEntity::class,
-        TimeSlotEntity::class,
-        ClassScheduleEntity::class,
-        StudentTimelineEventEntity::class,
-        StudentStatsEntity::class,
-        AssessmentEntity::class
+        EventEntity::class,
+        NotificationEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -37,17 +38,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun noticeDao(): NoticeDao
     abstract fun scheduleDao(): ScheduleDao
-    abstract fun studentDao(): StudentDao
-    abstract fun gradeDao(): GradeDao
-    abstract fun attendanceDao(): AttendanceDao
-    abstract fun syncQueueDao(): SyncQueueDao
-    abstract fun subjectDao(): SubjectDao
-    abstract fun timeSlotDao(): TimeSlotDao
-    abstract fun classScheduleDao(): ClassScheduleDao
-    abstract fun studentTimelineDao(): StudentTimelineDao
-    abstract fun studentStatsDao(): StudentStatsDao
+    abstract fun eventDao(): EventDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
+
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -58,7 +54,6 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "takstud_database"
                 )
-                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

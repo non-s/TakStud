@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,7 +86,7 @@ fun ManageStudentsScreen(
                 title = { Text(stringResource(R.string.manage_students_title), color = PureWhite, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back), tint = PureWhite)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = PureWhite)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NavyBlue)
@@ -288,7 +288,7 @@ fun StudentListItem(student: Student, onDelete: () -> Unit) {
                 }
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Deletar Aluno", tint = ErrorRed)
+                Icon(Icons.Filled.Delete, contentDescription = "Deletar Aluno", tint = ErrorRed)
             }
         }
     }

@@ -11,6 +11,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -72,9 +75,9 @@ fun TimeSlotDialog(
             ) {
                 Icon(
                     when {
-                        isBreak -> Icons.Default.Coffee
-                        isSpecialEvent -> Icons.Default.Event
-                        else -> Icons.Default.Schedule
+                        isBreak -> Icons.Filled.Coffee
+                        isSpecialEvent -> Icons.Filled.Event
+                        else -> Icons.Filled.Schedule
                     },
                     contentDescription = null,
                     tint = AccentBlue
@@ -118,7 +121,7 @@ fun TimeSlotDialog(
                                     isSpecialEvent = false
                                 },
                                 label = { Text("Aula") },
-                                leadingIcon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null) },
                                 modifier = Modifier.weight(1f)
                             )
                             FilterChip(
@@ -128,7 +131,7 @@ fun TimeSlotDialog(
                                     isSpecialEvent = false
                                 },
                                 label = { Text("Intervalo") },
-                                leadingIcon = { Icon(Icons.Default.Coffee, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.Filled.Coffee, contentDescription = null) },
                                 modifier = Modifier.weight(1f)
                             )
                             FilterChip(
@@ -138,7 +141,7 @@ fun TimeSlotDialog(
                                     isSpecialEvent = true
                                 },
                                 label = { Text("Evento") },
-                                leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.Filled.Event, contentDescription = null) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -165,7 +168,7 @@ fun TimeSlotDialog(
                     )
 
                     Icon(
-                        Icons.Default.ArrowForward,
+                        Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
                         modifier = Modifier.align(Alignment.CenterVertically)
                     )
@@ -197,7 +200,7 @@ fun TimeSlotDialog(
                             onValueChange = { eventTitle = it },
                             label = { Text("Título do Evento") },
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.Filled.Event, contentDescription = null) },
                             isError = errors.containsKey("eventTitle"),
                             supportingText = errors["eventTitle"]?.let { { Text(it) } }
                         )
@@ -232,7 +235,7 @@ fun TimeSlotDialog(
                                     )
                                 }
                                 Icon(
-                                    Icons.Default.ChevronRight,
+                                    Icons.Filled.ChevronRight,
                                     contentDescription = null,
                                     tint = DarkGray
                                 )
@@ -253,7 +256,7 @@ fun TimeSlotDialog(
                             onValueChange = { classroom = it },
                             label = { Text("Sala/Local") },
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Room, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.Filled.Room, contentDescription = null) },
                             placeholder = { Text(selectedSubject?.classroom ?: "Ex: Sala 101") }
                         )
 
@@ -276,7 +279,7 @@ fun TimeSlotDialog(
                                 onValueChange = { substituteTeacher = it },
                                 label = { Text("Nome do Substituto") },
                                 modifier = Modifier.fillMaxWidth(),
-                                leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null) }
+                                leadingIcon = { Icon(Icons.Filled.SwapHoriz, contentDescription = null) }
                             )
                         }
                     }
@@ -290,7 +293,7 @@ fun TimeSlotDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 3,
-                    leadingIcon = { Icon(Icons.Default.Notes, contentDescription = null) }
+                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null) }
                 )
             }
         },
@@ -427,7 +430,7 @@ private fun TimeField(
         modifier = modifier,
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
-        leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
+        leadingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = null) },
         placeholder = { Text("00:00") },
         singleLine = true
     )
@@ -459,7 +462,7 @@ private fun SubjectPickerDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            Icons.Default.MenuBook,
+                            Icons.AutoMirrored.Filled.MenuBook,
                             contentDescription = null,
                             tint = LightGray,
                             modifier = Modifier.size(48.dp)
@@ -556,7 +559,7 @@ private fun SubjectPickerItem(
             // Check
             if (isSelected) {
                 Icon(
-                    Icons.Default.CheckCircle,
+                    Icons.Filled.CheckCircle,
                     contentDescription = null,
                     tint = AccentBlue
                 )

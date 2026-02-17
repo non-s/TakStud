@@ -83,4 +83,7 @@
     <string name="manage_students_title">Gerenciar Alunos</string>
     <string name="add_button">Adicionar</string>
     <string name="delete_ra_button">Apagar RA</string>
+
+    <!-- Firebase Cloud Messaging -->
+    <string name="default_notification_channel_id">takstud_notifications</string>
 </resources>

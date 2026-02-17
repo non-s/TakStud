@@ -1,48 +1,29 @@
 package com.example.takstud.ui.login
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.takstud.ui.theme.*
 import com.example.takstud.util.Result
 import com.example.takstud.viewmodel.LoginViewModel
 
 /**
- * Tela de login para professors.
- * Solicita o código de acesso do professor.
- *
- * @param viewModel LoginViewModel para gerenciar o estado
- * @param onLoginSuccess Callback quando o login é bem-sucedido
- * @param onBackClick Callback quando clica em voltar
+ * TeacherLoginScreen Premium - Login moderno para professores
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,107 +52,160 @@ fun TeacherLoginScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Login - Professor") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
-                    }
-                }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        PrimaryBlue.copy(alpha = 0.05f),
+                        Color.White
+                    )
+                )
+            )
+    ) {
+        // Botão Voltar
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .padding(16.dp)
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Voltar",
+                tint = PrimaryBlue
             )
         }
-    ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Titulo
-            Text(
-                "Acesso Professor",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.padding(bottom = 32.dp)
+            // Ícone
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = PrimaryBlue
             )
-
-            // Descricao
-            Text(
-                "Digite seu código de acesso para continuar",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            // Campo Código
-            OutlinedTextField(
-                value = codigoAcesso,
-                onValueChange = {
-                    codigoAcesso = it
-                    codigoError = null  // Limpar erro ao digitar
-                },
-                label = { Text("Código de Acesso") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                visualTransformation = PasswordVisualTransformation(),
-                enabled = !isLoading,
-                singleLine = true,
-                isError = codigoError != null
-            )
-
-            // Mensagem de Erro
-            if (codigoError != null) {
-                Text(
-                    codigoError!!,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botão Entrar
-            Button(
-                onClick = {
-                    if (codigoAcesso.isNotBlank()) {
-                        viewModel.loginAsTeacher(codigoAcesso)
-                    } else {
-                        codigoError = "Digite o código de acesso"
-                    }
-                },
-                enabled = !isLoading && codigoAcesso.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
+            // Título
+            Text(
+                text = "Acesso Professor",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = Neutral900
+            )
+
+            Text(
+                text = "Digite seu código de acesso",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Neutral500,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Card de Login
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 8.dp
+                )
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(24.dp),
-                        strokeWidth = 2.dp
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    // Campo Código
+                    OutlinedTextField(
+                        value = codigoAcesso,
+                        onValueChange = {
+                            codigoAcesso = it
+                            codigoError = null
+                        },
+                        label = { Text("Código de Acesso") },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = PasswordVisualTransformation(),
+                        enabled = !isLoading,
+                        singleLine = true,
+                        isError = codigoError != null,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryBlue,
+                            unfocusedBorderColor = Neutral300
+                        )
                     )
-                } else {
-                    Text("ENTRAR")
+
+                    // Mensagem de Erro
+                    AnimatedVisibility(visible = codigoError != null) {
+                        Text(
+                            text = codigoError ?: "",
+                            color = Error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botão Entrar
+                    Button(
+                        onClick = {
+                            if (codigoAcesso.isNotBlank()) {
+                                viewModel.loginAsTeacher(codigoAcesso)
+                            } else {
+                                codigoError = "Digite o código de acesso"
+                            }
+                        },
+                        enabled = !isLoading && codigoAcesso.isNotBlank(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryBlue
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text(
+                                "ENTRAR",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Info
+                    Text(
+                        text = "💡 Peça o código ao administrador",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Neutral500,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Info
-            Text(
-                "Peça o código ao administrador",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
         }
     }
 }

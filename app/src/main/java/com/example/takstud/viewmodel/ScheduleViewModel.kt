@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,8 +25,8 @@ class ScheduleViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun getSchedulesForStudent(student: Student): StateFlow<List<Schedule>> {
-        return schedules.combine(schedules) { schedules, _ ->
-            schedules.filter { it.studentClass == student.studentClass }
+        return schedules.map { list ->
+            list.filter { it.studentClass == student.studentClass || it.studentClass.isEmpty() }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 

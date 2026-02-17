@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,11 +49,11 @@ fun SubjectManagementScreen(
     var showInactive by remember { mutableStateOf(false) }
 
     val filteredSubjects = remember(subjects, searchQuery, showInactive) {
-        subjects.filter { subject ->
-            val matchesSearch = subject.name.contains(searchQuery, ignoreCase = true) ||
-                               subject.shortName.contains(searchQuery, ignoreCase = true) ||
-                               subject.teacherName.contains(searchQuery, ignoreCase = true)
-            val matchesStatus = showInactive || subject.isActive
+        subjects.filter {
+            val matchesSearch = it.name.contains(searchQuery, ignoreCase = true) ||
+                               it.shortName.contains(searchQuery, ignoreCase = true) ||
+                               it.teacherName.contains(searchQuery, ignoreCase = true)
+            val matchesStatus = showInactive || it.isActive
             matchesSearch && matchesStatus
         }
     }
@@ -63,14 +65,14 @@ fun SubjectManagementScreen(
                 title = { Text("Gerenciar Disciplinas", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
                     // Toggle mostrar inativos
                     IconButton(onClick = { showInactive = !showInactive }) {
                         Icon(
-                            if (showInactive) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            if (showInactive) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                             contentDescription = "Mostrar inativos",
                             tint = if (showInactive) WarningYellow else PureWhite
                         )
@@ -90,7 +92,7 @@ fun SubjectManagementScreen(
                     selectedSubject = null
                     showAddDialog = true
                 },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("Nova Disciplina") },
                 containerColor = AccentBlue
             )
@@ -179,12 +181,12 @@ private fun SearchBar(
         modifier = modifier.fillMaxWidth(),
         placeholder = { Text("Buscar disciplinas...") },
         leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = null)
+            Icon(Icons.Filled.Search, contentDescription = null)
         },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Close, contentDescription = "Limpar")
+                    Icon(Icons.Filled.Close, contentDescription = "Limpar")
                 }
             }
         },
@@ -218,19 +220,19 @@ private fun SubjectStats(
             StatItem(
                 value = total.toString(),
                 label = "Total",
-                icon = Icons.Default.MenuBook,
+                icon = Icons.AutoMirrored.Filled.MenuBook,
                 color = AccentBlue
             )
             StatItem(
                 value = active.toString(),
                 label = "Ativas",
-                icon = Icons.Default.CheckCircle,
+                icon = Icons.Filled.CheckCircle,
                 color = SuccessGreen
             )
             StatItem(
                 value = "${totalWeeklyHours}h",
                 label = "Carga Semanal",
-                icon = Icons.Default.Schedule,
+                icon = Icons.Filled.Schedule,
                 color = WarningYellow
             )
         }
@@ -286,7 +288,7 @@ private fun EmptySubjectsState(
             modifier = Modifier.padding(32.dp)
         ) {
             Icon(
-                if (hasSearch) Icons.Default.SearchOff else Icons.Default.MenuBook,
+                if (hasSearch) Icons.Filled.SearchOff else Icons.AutoMirrored.Filled.MenuBook,
                 contentDescription = null,
                 tint = LightGray,
                 modifier = Modifier.size(64.dp)
@@ -302,7 +304,7 @@ private fun EmptySubjectsState(
                     onClick = onAddClick,
                     colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
+                    Icon(Icons.Filled.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Criar primeira disciplina")
                 }
@@ -384,7 +386,7 @@ private fun SubjectDialog(
                         onValueChange = { teacherName = it },
                         label = { Text("Professor(a)") },
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                        leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) }
                     )
                 }
 
@@ -395,7 +397,7 @@ private fun SubjectDialog(
                         onValueChange = { classroom = it },
                         label = { Text("Sala/Local") },
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Room, contentDescription = null) }
+                        leadingIcon = { Icon(Icons.Filled.Room, contentDescription = null) }
                     )
                 }
 
@@ -410,7 +412,7 @@ private fun SubjectDialog(
                         },
                         label = { Text("Horas/Semana") },
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Filled.Schedule, contentDescription = null) },
                         suffix = { Text("h") }
                     )
                 }
@@ -528,11 +530,11 @@ private fun ColorSelector(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-        items(colors) { color ->
+        items(colors) {
             ColorOption(
-                color = color,
-                isSelected = color.value.toLong() == selectedColor,
-                onClick = { onColorSelect(color.value.toLong()) }
+                color = it,
+                isSelected = it.value.toLong() == selectedColor,
+                onClick = { onColorSelect(it.value.toLong()) }
             )
         }
     }
@@ -554,7 +556,7 @@ private fun ColorOption(
     ) {
         if (isSelected) {
             Icon(
-                Icons.Default.Check,
+                Icons.Filled.Check,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)

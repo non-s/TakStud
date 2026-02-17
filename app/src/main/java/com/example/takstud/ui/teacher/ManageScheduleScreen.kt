@@ -53,13 +53,22 @@ fun ManageScheduleScreen(
             }
         }
 
-        OutlinedTextField(
-            value = studentClass,
-            onValueChange = { studentClass = it },
-            label = { Text(stringResource(R.string.class_name_hint)) },
-            modifier = Modifier.fillMaxWidth(),
-            readOnly = !isNew
-        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = studentClass,
+                onValueChange = { studentClass = it },
+                label = { Text(stringResource(R.string.class_name_hint)) },
+                modifier = Modifier.weight(1f),
+                readOnly = !isNew
+            )
+            Button(
+                onClick = { studentClass = "" },
+                modifier = Modifier.padding(start = 8.dp),
+                enabled = isNew
+            ) {
+                Text("TODOS")
+            }
+        }
         OutlinedTextField(
             value = details,
             onValueChange = { details = it },
