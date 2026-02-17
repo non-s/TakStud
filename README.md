@@ -1,16 +1,16 @@
-# TakStud — Sistema de Gestao Educacional Android
+# TakStud — Sistema de Gestão Educacional Android
 
-Aplicativo Android nativo para gestao escolar com suporte a professores, alunos e responsaveis. Oferece controle de horarios, tarefas, frequencia, notas e comunicados com sincronizacao em tempo real via Firebase.
-
----
-
-## Visao Geral
-
-O TakStud e um sistema offline-first: todas as operacoes sao realizadas primeiro no banco local (Room/SQLite) e sincronizadas com o Firebase Firestore em background. Isso garante funcionamento sem internet e consistencia eventual de dados.
+Aplicativo Android nativo para gestão escolar com suporte a professores, alunos e responsáveis. Oferece controle de horários, tarefas, frequência, notas e comunicados com sincronização em tempo real via Firebase.
 
 ---
 
-## Stack Tecnica
+## Visão Geral
+
+O TakStud é um sistema offline-first: todas as operações são realizadas primeiro no banco local (Room/SQLite) e sincronizadas com o Firebase Firestore em background. Isso garante funcionamento sem internet e consistência eventual de dados.
+
+---
+
+## Stack Técnica
 
 | Camada | Tecnologia |
 |---|---|
@@ -23,9 +23,9 @@ O TakStud e um sistema offline-first: todas as operacoes sao realizadas primeiro
 | Push | Firebase Cloud Messaging (FCM) |
 | Background | WorkManager 2.9.0 |
 | Async | Kotlin Coroutines + Flow |
-| Paginacao | Paging 3 |
-| Preferencias | DataStore |
-| Seguranca | EncryptedSharedPreferences (androidx.security) |
+| Paginação | Paging 3 |
+| Preferências | DataStore |
+| Segurança | EncryptedSharedPreferences (androidx.security) |
 | Qualidade | Detekt 1.23.1 |
 | Logging | Timber 5.0.1 |
 | Serialization | Gson 2.10.1 + kotlinx-serialization 1.6.0 |
@@ -36,29 +36,29 @@ O TakStud e um sistema offline-first: todas as operacoes sao realizadas primeiro
 
 ## Arquitetura
 
-O projeto segue Clean Architecture com separacao em tres camadas principais:
+O projeto segue Clean Architecture com separação em três camadas principais:
 
 ```
 app/src/main/java/com/example/takstud/
 │
-├── model/                          # Entidades de dominio
-│   ├── Class.kt                    # Turma escolar (codigo, alunos, professor)
-│   ├── Student.kt                  # Aluno (nome, matricula, turma)
+├── model/                          # Entidades de domínio
+│   ├── Class.kt                    # Turma escolar (código, alunos, professor)
+│   ├── Student.kt                  # Aluno (nome, matrícula, turma)
 │   ├── Task.kt                     # Tarefa/atividade
 │   ├── Notice.kt                   # Comunicado
-│   ├── Notification.kt             # Notificacao interna
-│   ├── Period.kt                   # Periodo letivo
-│   ├── Role.kt                     # Papel do usuario (TEACHER, STUDENT, PARENT, ADMIN)
-│   ├── Permission.kt               # Permissoes por role
-│   ├── UserSession.kt              # Sessao autenticada
-│   ├── EventCalendar.kt            # Evento no calendario
+│   ├── Notification.kt             # Notificação interna
+│   ├── Period.kt                   # Período letivo
+│   ├── Role.kt                     # Papel do usuário (TEACHER, STUDENT, PARENT, ADMIN)
+│   ├── Permission.kt               # Permissões por role
+│   ├── UserSession.kt              # Sessão autenticada
+│   ├── EventCalendar.kt            # Evento no calendário
 │   ├── schedule/
-│   │   ├── ClassSchedule.kt        # Grade horaria de uma turma
+│   │   ├── ClassSchedule.kt        # Grade horária de uma turma
 │   │   ├── Subject.kt              # Disciplina
-│   │   ├── TimeSlot.kt             # Slot de horario (dia, hora inicio/fim)
-│   │   └── ScheduleConflict.kt     # Conflito de horario detectado
+│   │   ├── TimeSlot.kt             # Slot de horário (dia, hora início/fim)
+│   │   └── ScheduleConflict.kt     # Conflito de horário detectado
 │   ├── student/
-│   │   └── StudentExtended.kt      # Aluno com notas, frequencia e estatisticas
+│   │   └── StudentExtended.kt      # Aluno com notas, frequência e estatísticas
 │   └── task/
 │       └── TaskExtended.kt         # Tarefa com submissions e status
 │
@@ -67,12 +67,12 @@ app/src/main/java/com/example/takstud/
 │   │   ├── AppDatabase.kt          # Room Database — configura todas as entidades e DAOs
 │   │   ├── entity/
 │   │   │   ├── Entities.kt         # Entidades Room principais
-│   │   │   ├── ScheduleEntities.kt # Entidades de horario
-│   │   │   ├── StudentEntities.kt  # Entidades de aluno/nota/frequencia
-│   │   │   ├── TaskEntities.kt     # Entidades de tarefas e submissoes
+│   │   │   ├── ScheduleEntities.kt # Entidades de horário
+│   │   │   ├── StudentEntities.kt  # Entidades de aluno/nota/frequência
+│   │   │   ├── TaskEntities.kt     # Entidades de tarefas e submissões
 │   │   │   ├── EventEntity.kt      # Entidade de eventos
 │   │   │   └── NotificationEntity.kt
-│   │   ├── dao/                    # 16 DAOs com operacoes CRUD + Flow
+│   │   ├── dao/                    # 16 DAOs com operações CRUD + Flow
 │   │   │   ├── AttendanceDao.kt
 │   │   │   ├── ClassScheduleDao.kt
 │   │   │   ├── EventDao.kt
@@ -85,13 +85,13 @@ app/src/main/java/com/example/takstud/
 │   │   │   ├── StudentStatsDao.kt
 │   │   │   ├── StudentTimelineDao.kt
 │   │   │   ├── SubjectDao.kt
-│   │   │   ├── SyncQueueDao.kt     # Fila de operacoes pendentes para sync
+│   │   │   ├── SyncQueueDao.kt     # Fila de operações pendentes para sync
 │   │   │   ├── TaskDao.kt
 │   │   │   └── TimeSlotDao.kt
 │   │   └── converters/
 │   │       └── StringListConverter.kt  # TypeConverter Room: List<String> <-> JSON
 │   ├── remote/
-│   │   ├── FirebaseScheduleService.kt  # CRUD de horarios no Firestore
+│   │   ├── FirebaseScheduleService.kt  # CRUD de horários no Firestore
 │   │   └── FirebaseStudentService.kt   # CRUD de alunos no Firestore
 │   ├── repository/                 # Repository pattern — orquestra local + remoto
 │   │   ├── ClassRepository.kt
@@ -119,7 +119,7 @@ app/src/main/java/com/example/takstud/
 │
 ├── ui/                             # Telas Compose
 │   ├── login/
-│   │   ├── LoginScreen.kt          # Selecao de perfil
+│   │   ├── LoginScreen.kt          # Seleção de perfil
 │   │   ├── TeacherLoginScreen.kt
 │   │   ├── ParentLoginScreen.kt
 │   │   └── AdminLoginScreen.kt
@@ -142,7 +142,7 @@ app/src/main/java/com/example/takstud/
 │   │   │   └── SubjectManagementScreen.kt
 │   │   └── task/
 │   │       └── RichTaskEditorScreen.kt
-│   ├── parent/                     # Telas do responsavel
+│   ├── parent/                     # Telas do responsável
 │   │   ├── ParentScreen.kt
 │   │   ├── StudentSelectionScreen.kt
 │   │   ├── ParentTaskListScreen.kt
@@ -157,7 +157,7 @@ app/src/main/java/com/example/takstud/
 │   ├── calendar/
 │   │   ├── CalendarScreen.kt
 │   │   └── WeeklyCalendarView.kt
-│   ├── components/                 # Componentes reutilizaveis
+│   ├── components/                 # Componentes reutilizáveis
 │   │   ├── Charts.kt
 │   │   ├── FormComponents.kt
 │   │   ├── LoadingStates.kt
@@ -177,39 +177,39 @@ app/src/main/java/com/example/takstud/
 │   │   ├── Type.kt
 │   │   ├── Shape.kt
 │   │   ├── ThemeCustomization.kt
-│   │   └── ThemePreferences.kt     # Persistencia da preferencia de tema
+│   │   └── ThemePreferences.kt     # Persistência da preferência de tema
 │   ├── AuthGuard.kt                # Composable que protege rotas por role
 │   ├── HomeScreen.kt
 │   └── NotificationScreen.kt
 │
-├── di/                             # Modulos de injecao de dependencia (Hilt)
-│   ├── AppModule.kt                # Provê Firebase, repositorios, etc.
+├── di/                             # Módulos de injeção de dependência (Hilt)
+│   ├── AppModule.kt                # Provê Firebase, repositórios, etc.
 │   └── DatabaseModule.kt          # Provê AppDatabase e todos os DAOs
 │
 ├── security/
-│   ├── SecureSessionManager.kt     # Gerencia sessao com EncryptedSharedPreferences
-│   ├── AccessValidator.kt          # Valida permissoes por role
+│   ├── SecureSessionManager.kt     # Gerencia sessão com EncryptedSharedPreferences
+│   ├── AccessValidator.kt          # Valida permissões por role
 │   └── LoginRateLimiter.kt         # Limita tentativas de login
 │
 ├── service/
 │   └── TakStudMessagingService.kt  # FCM — recebe e processa push notifications
 │
 ├── notifications/
-│   └── NotificationHelper.kt       # Cria e exibe notificacoes locais
+│   └── NotificationHelper.kt       # Cria e exibe notificações locais
 │
 ├── util/
 │   ├── Result.kt                   # Sealed class: Success / Error / Loading
-│   ├── SessionManager.kt           # Estado de sessao em memoria
-│   ├── SessionStorage.kt           # Persistencia de sessao
+│   ├── SessionManager.kt           # Estado de sessão em memória
+│   ├── SessionStorage.kt           # Persistência de sessão
 │   ├── ErrorHandler.kt             # Tratamento centralizado de erros
-│   ├── InputValidator.kt           # Validacao de formularios
+│   ├── InputValidator.kt           # Validação de formulários
 │   ├── FirestoreFlowHelper.kt      # Converte snapshots Firestore em Flow
-│   └── NotificationManager.kt      # Utilitarios de notificacao
+│   └── NotificationManager.kt      # Utilitários de notificação
 │
 ├── TakStudApplication.kt           # Application — inicializa Hilt e Timber
 ├── MainActivity.kt                 # Entry point — NavHost Compose
-├── TakStudNavGraph.kt              # Grafo de navegacao completo
-└── StudentAuthRepository.kt        # Autenticacao de alunos via codigo de turma
+├── TakStudNavGraph.kt              # Grafo de navegação completo
+└── StudentAuthRepository.kt        # Autenticação de alunos via código de turma
 ```
 
 ---
@@ -223,30 +223,30 @@ ViewModel
     ↕  suspend fun / Flow
 Repository
     ├─→ Local (Room DAO)      ← fonte de verdade
-    └─→ Remote (Firestore)    ← sincronizacao em background
+    └─→ Remote (Firestore)    ← sincronização em background
 ```
 
-**Offline-first**: leituras sempre vem do Room. Escritas vao para o Room imediatamente e para o Firestore de forma assíncrona. Operacoes que falham ficam na `SyncQueue` e sao reenviadas pelo WorkManager.
+**Offline-first**: leituras sempre vêm do Room. Escritas vão para o Room imediatamente e para o Firestore de forma assíncrona. Operações que falham ficam na `SyncQueue` e são reenviadas pelo WorkManager.
 
 ---
 
-## Modulo de Seguranca
+## Módulo de Segurança
 
-- **`SecureSessionManager`**: armazena token de sessao em `EncryptedSharedPreferences` (AES-256)
-- **`LoginRateLimiter`**: bloqueia tentativas apos N falhas consecutivas
-- **`AccessValidator`**: verifica permissoes antes de executar operacoes criticas
-- **`AuthGuard`**: composable que redireciona para login caso a sessao seja invalida
+- **`SecureSessionManager`**: armazena token de sessão em `EncryptedSharedPreferences` (AES-256)
+- **`LoginRateLimiter`**: bloqueia tentativas após N falhas consecutivas
+- **`AccessValidator`**: verifica permissões antes de executar operações críticas
+- **`AuthGuard`**: composable que redireciona para login caso a sessão seja inválida
 
 ---
 
-## Papeis de Usuario (Roles)
+## Papéis de Usuário (Roles)
 
 | Role | Acesso |
 |---|---|
-| `TEACHER` | Dashboard, turmas, alunos, tarefas, frequencia, horarios, comunicados, analytics |
-| `PARENT` | Tarefas, comunicados, horarios e analytics do filho selecionado |
-| `STUDENT` | Submissao de tarefas |
-| `ADMIN` | Dashboard administrativo com visao geral |
+| `TEACHER` | Dashboard, turmas, alunos, tarefas, frequência, horários, comunicados, analytics |
+| `PARENT` | Tarefas, comunicados, horários e analytics do filho selecionado |
+| `STUDENT` | Submissão de tarefas |
+| `ADMIN` | Dashboard administrativo com visão geral |
 
 ---
 
@@ -254,33 +254,33 @@ Repository
 
 **16 DAOs** cobrindo as entidades:
 
-- `ClassSchedule`, `TimeSlot`, `Subject` — horarios
+- `ClassSchedule`, `TimeSlot`, `Subject` — horários
 - `Student`, `StudentStats`, `StudentTimeline` — alunos
 - `Grade`, `StudentGrade` — notas
-- `Attendance` — frequencia
+- `Attendance` — frequência
 - `Task` — tarefas
 - `Notice` — comunicados
-- `Notification` — notificacoes internas
-- `Event` — eventos do calendario
-- `SyncQueue` — fila de sincronizacao
+- `Notification` — notificações internas
+- `Event` — eventos do calendário
+- `SyncQueue` — fila de sincronização
 
 ---
 
 ## Firebase
 
-| Servico | Uso |
+| Serviço | Uso |
 |---|---|
-| Firestore | Banco principal remoto (turmas, alunos, tarefas, horarios) |
-| Cloud Messaging | Push notifications para professores e responsaveis |
+| Firestore | Banco principal remoto (turmas, alunos, tarefas, horários) |
+| Cloud Messaging | Push notifications para professores e responsáveis |
 | Analytics | Rastreamento de eventos de uso |
 | Storage | Armazenamento de arquivos anexados |
-| Remote Config | Configuracoes remotas de feature flags |
+| Remote Config | Configurações remotas de feature flags |
 
-**Regras de seguranca**: definidas em `firestore.rules` — acesso autenticado por role com validacao server-side.
+**Regras de segurança**: definidas em `firestore.rules` — acesso autenticado por role com validação server-side.
 
 ---
 
-## Configuracao para Rodar
+## Configuração para Rodar
 
 1. Crie um projeto no [Firebase Console](https://console.firebase.google.com)
 2. Adicione um app Android com package `com.example.takstud`
@@ -304,17 +304,17 @@ Repository
 TakStud/
 ├── app/
 │   ├── src/main/
-│   │   ├── java/com/example/takstud/   # Codigo-fonte (descrito acima)
+│   │   ├── java/com/example/takstud/   # Código-fonte (descrito acima)
 │   │   ├── res/                         # Resources Android
 │   │   └── AndroidManifest.xml
 │   └── build.gradle.kts
 ├── gradle/
-│   └── libs.versions.toml              # Catalogo de versoes (Gradle Version Catalog)
+│   └── libs.versions.toml              # Catálogo de versões (Gradle Version Catalog)
 ├── build.gradle.kts
 ├── settings.gradle.kts
 ├── gradle.properties
-├── detekt.yml                          # Regras de analise estatica
-├── firestore.rules                     # Regras de seguranca Firestore
+├── detekt.yml                          # Regras de análise estática
+├── firestore.rules                     # Regras de segurança Firestore
 ├── takstud_logo.svg
 └── web-demo/                           # Demo web da interface (HTML/CSS/JS)
 ```
