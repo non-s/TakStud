@@ -47,9 +47,6 @@ out/
 .env
 .env.local
 
-# Google Services — contém chaves privadas, NÃO commitar
-google-services.json
-
 # Firebase — gerado localmente, não commitar
 .firebase/
 .firebaserc
