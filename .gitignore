@@ -1,0 +1,72 @@
+# Gradle
+.gradle/
+build/
+*.gradle
+local.properties
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+.classpath
+.project
+.settings/
+.metadata
+
+# Android
+bin/
+gen/
+.gradle
+captures/
+intermediates/
+.android/
+*.apk
+*.ap_
+*.aar
+
+# Kotlin
+.kotlin
+
+# Build
+build/
+out/
+*.class
+*.jar
+
+# Misc
+*.log
+*.swp
+*.swo
+*~
+.tmp
+
+# Environment
+.env
+.env.local
+
+# Google Services — contém chaves privadas, NÃO commitar
+google-services.json
+
+# Firebase — gerado localmente, não commitar
+.firebase/
+.firebaserc
+
+# Local IDE files
+.vscode/settings.json
+.vscode/tasks.json
+
+# Compiled
+*.o
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# OS
+Thumbs.db
+.DS_Store
+ehthumbs.db
