@@ -47,9 +47,10 @@ out/
 .env
 .env.local
 
-# Firebase — gerado localmente, não commitar
+# Firebase — credenciais, nunca commitar
 .firebase/
 .firebaserc
+google-services.json
 
 # Local IDE files
 .vscode/settings.json
