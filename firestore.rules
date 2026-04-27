@@ -1,97 +1,82 @@
-/**
- * FIRESTORE SECURITY RULES - TakStud
- *
- * IMPORTANTE: O app usa autenticação customizada (sem Firebase Auth),
- * portanto não temos request.auth disponível. As regras protegem o que
- * é possível proteger nesse modelo:
- *
- * - config/teacherAccess: leitura permitida (necessária para login),
- *                          escrita bloqueada (só via Console Firebase)
- * - fcm_tokens: escrita permitida (dispositivos registram tokens),
- *               leitura bloqueada (tokens são privados)
- * - notifications: escrita e leitura permitidas (app gerencia)
- * - students: leitura permitida (login por RA), escrita pelo app
- * - Demais coleções: leitura/escrita permitidas para o app funcionar
- *
- * NOTA: Para segurança completa, migrar para Firebase Authentication
- * (Anonymous + Custom Token) em versão futura.
- *
- * Versão: 2.0 — compatível com autenticação customizada
- */
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ==================== CONFIG (professor) ====================
-    // Leitura permitida: o app precisa verificar o código do professor
-    // Escrita BLOQUEADA: código só pode ser alterado via Console Firebase
+    // config: leitura para login do professor, escrita bloqueada (somente Console)
     match /config/{docId} {
       allow read: if true;
       allow write: if false;
     }
 
-    // ==================== FCM TOKENS ====================
-    // Dispositivos gravam seus próprios tokens (push notifications)
-    // Leitura bloqueada: tokens são sensíveis e só o backend usa
+    // fcm_tokens: dispositivos registram token, leitura bloqueada externamente
     match /fcm_tokens/{deviceId} {
-      allow create, update: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['token', 'updatedAt'])
+                           && request.resource.data.token is string
+                           && request.resource.data.token.size() > 0;
       allow read, delete: if false;
     }
 
-    // ==================== NOTIFICATIONS ====================
-    // Leitura e escrita: app gerencia notificações dos usuários
-    // Proteção futura: migrar para Firebase Auth com query por uid
+    // notifications: escrita exige campos obrigatórios
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['title', 'body', 'createdAt'])
+                   && request.resource.data.title is string
+                   && request.resource.data.body is string;
+      allow update, delete: if true;
     }
 
-    // ==================== NOTIFICATION SETTINGS ====================
     match /notificationSettings/{userId} {
       allow read, write: if true;
     }
 
-    // ==================== STUDENTS ====================
-    // Leitura: necessária para login por RA
-    // Escrita: professores criam/atualizam alunos pelo app
+    // students: criação exige campos mínimos
     match /students/{studentId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['name', 'ra', 'classId'])
+                   && request.resource.data.name is string
+                   && request.resource.data.ra is string;
+      allow update, delete: if true;
     }
 
-    // ==================== TASKS ====================
+    // tasks: título obrigatório e limitado a 200 chars
     match /tasks/{taskId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['title', 'dueDate', 'classId'])
+                   && request.resource.data.title is string
+                   && request.resource.data.title.size() > 0
+                   && request.resource.data.title.size() <= 200;
+      allow update, delete: if true;
     }
 
-    // ==================== NOTICES ====================
+    // notices: título obrigatório
     match /notices/{noticeId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['title', 'content', 'createdAt'])
+                   && request.resource.data.title is string
+                   && request.resource.data.title.size() > 0;
+      allow update, delete: if true;
     }
 
-    // ==================== SCHEDULES ====================
     match /schedules/{scheduleId} {
       allow read, write: if true;
     }
 
-    // ==================== EVENTS (calendar) ====================
     match /events/{eventId} {
       allow read, write: if true;
     }
 
-    // ==================== CLASSES ====================
     match /classes/{classId} {
       allow read, write: if true;
     }
 
-    // ==================== AUDIT LOGS (append-only) ====================
+    // auditLogs: append-only, sem leitura/update/delete pelo app
     match /auditLogs/{logId} {
-      allow create: if true;
-      allow read: if false;
-      allow update, delete: if false;
+      allow create: if request.resource.data.keys().hasAll(['action', 'timestamp'])
+                   && request.resource.data.action is string;
+      allow read, update, delete: if false;
     }
 
-    // ==================== CATCH-ALL ====================
-    // Tudo que não foi explicitamente permitido acima é bloqueado
+    // bloqueia todo acesso não listado acima
     match /{document=**} {
       allow read, write: if false;
     }
