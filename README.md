@@ -1,5 +1,11 @@
 # TakStud — Sistema de Gestão Educacional Android
 
+[![Build](https://github.com/non-s/TakStud/actions/workflows/release.yml/badge.svg?branch=master)](https://github.com/non-s/TakStud/actions/workflows/release.yml)
+[![Download APK](https://img.shields.io/github/v/release/non-s/TakStud?color=00ff41&label=baixar%20APK&logo=android&logoColor=white)](https://github.com/non-s/TakStud/releases/latest/download/TakStud.apk)
+[![Android](https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![License](https://img.shields.io/github/license/non-s/TakStud?color=blue)](LICENSE)
+
 Aplicativo Android nativo para gestão escolar com suporte a professores, alunos e responsáveis. Oferece controle de horários, tarefas, frequência, notas e comunicados com sincronização em tempo real via Firebase.
 
 ---
