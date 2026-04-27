@@ -22,26 +22,19 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Restaurar google-services.json
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
-          else
-            echo '{"project_info":{"project_number":"000000000000","project_id":"takstud-app","storage_bucket":"takstud-app.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.takstud.app"}},"api_key":[{"current_key":"AIzaSyPlaceholder000000000000000000000000"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}},"oauth_client":[],"api_key":[{"current_key":"AIzaSyPlaceholder"}]}],"configuration_version":"1"}' > app/google-services.json
-          fi
-
       - name: Permissao gradlew
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug -x lint -x test -x detekt
+        run: ./gradlew assembleDebug -x lint -x test -x detekt --stacktrace
 
-      - name: Preparar APK
+      - name: Localizar e renomear APK
         run: |
+          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          echo "APK encontrado: $APK"
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/TakStud.apk
+          cp "$APK" dist/TakStud.apk
+          ls -lh dist/
 
       - name: Publicar na Release v1.0.0
         uses: softprops/action-gh-release@v2
@@ -49,4 +42,5 @@ jobs:
           tag_name: v1.0.0
           name: "TakStud v1.0.0"
           files: dist/TakStud.apk
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_unmatched_files: true
+          token: ${{{{ secrets.GITHUB_TOKEN }}}}
