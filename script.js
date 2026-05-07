@@ -1,24 +1,179 @@
-/* ── DB proxy — localStorage with getter/setter interception ── */
-const DB = {
-    get students(){ return JSON.parse(localStorage.getItem('ts_students')||'[]') },
-    set students(v){ localStorage.setItem('ts_students',JSON.stringify(v)) },
-    get tasks(){ return JSON.parse(localStorage.getItem('ts_tasks')||'[]') },
-    set tasks(v){ localStorage.setItem('ts_tasks',JSON.stringify(v)) },
-    get notices(){ return JSON.parse(localStorage.getItem('ts_notices')||'[]') },
-    set notices(v){ localStorage.setItem('ts_notices',JSON.stringify(v)) },
-};
+/* ─── Supabase config ───────────────────────────────────────────────────────
+ * Substitua os dois valores abaixo com os da sua conta Supabase.
+ * Settings > API > Project URL  e  anon public key.
+ * A anon key é pública por design — o RLS protege os dados no servidor.
+ * ─────────────────────────────────────────────────────────────────────────── */
+const SUPABASE_URL      = 'https://xxxxxxxxxxxx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 
-let taskFilter = 'all', studentSearch = '', editingStudentId = null, currentRole = 'teacher';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ── RBAC — permissions enforced at render + action level ── */
+/* ─── RBAC — espelhado no banco via Row Level Security ───────────────────── */
 const RBAC = {
-    teacher: { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true, canExport: false },
-    student: { views: ['dashboard','tasks','notices'], canWrite: false, canExport: false },
-    admin:   { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true, canExport: true },
+    teacher: { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true,  canExport: false },
+    student: { views: ['dashboard','tasks','notices'],                       canWrite: false, canExport: false },
+    admin:   { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true,  canExport: true  },
 };
 
+/* ─── Estado ─────────────────────────────────────────────────────────────── */
+const state = {
+    profile:          null,   // { id, full_name, role, school_id }
+    taskFilter:       'all',
+    studentSearch:    '',
+    editingStudentId: null,
+};
+
+/* ─── Grade horária (dado estático, sem necessidade de banco) ────────────── */
+const SCHEDULE = [
+    { time:'07:00', mon:'Matemática', tue:'Português',  wed:'História',   thu:'Ciências',   fri:'Ed. Física' },
+    { time:'08:00', mon:'Português',  tue:'Matemática', wed:'Ciências',   thu:'Matemática', fri:'Artes'      },
+    { time:'09:00', mon:'História',   tue:'Ciências',   wed:'Matemática', thu:'Português',  fri:'Inglês'     },
+    { time:'10:30', mon:'Ciências',   tue:'História',   wed:'Inglês',     thu:'História',   fri:'Matemática' },
+    { time:'11:30', mon:'Inglês',     tue:'Ed. Física', wed:'Português',  thu:'Artes',      fri:'Português'  },
+];
+
+/* ─── Utilitários ────────────────────────────────────────────────────────── */
+const formatDate  = d => { if (!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
+const debounce    = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+/* XSS: toda string do usuário que vai para innerHTML passa por aqui */
+const esc = s => String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg, type = 'success') {
+    let el = document.getElementById('ts-toast');
+    if (!el) { el = document.createElement('div'); el.id = 'ts-toast'; document.body.appendChild(el); }
+    el.textContent = msg;
+    el.className   = `ts-toast ts-toast-${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ─── Auth UI ────────────────────────────────────────────────────────────── */
+const authOverlay = () => document.getElementById('authOverlay');
+const setAuthErr  = msg => { document.getElementById('authError').textContent = msg; };
+
+function showLoginSection() {
+    document.getElementById('loginSection').style.display    = '';
+    document.getElementById('registerSection').style.display = 'none';
+    setAuthErr('');
+}
+
+function showRegisterSection() {
+    document.getElementById('loginSection').style.display    = 'none';
+    document.getElementById('registerSection').style.display = '';
+    setAuthErr('');
+}
+
+async function login() {
+    const email    = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!email || !password) return setAuthErr('Preencha e-mail e senha.');
+    setAuthErr('');
+    const btn = document.getElementById('btnLogin');
+    btn.disabled = true;
+    btn.textContent = 'Entrando...';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    btn.disabled    = false;
+    btn.textContent = 'Entrar';
+    if (error) setAuthErr(error.message === 'Invalid login credentials'
+        ? 'E-mail ou senha incorretos.' : error.message);
+}
+
+async function register() {
+    const name     = document.getElementById('regName').value.trim();
+    const school   = document.getElementById('regSchool').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!name || !school || !email || !password) return setAuthErr('Preencha todos os campos.');
+    if (password.length < 6) return setAuthErr('Senha deve ter pelo menos 6 caracteres.');
+    setAuthErr('');
+    const btn = document.getElementById('btnRegister');
+    btn.disabled = true;
+    btn.textContent = 'Criando conta...';
+
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) {
+        btn.disabled = false; btn.textContent = 'Criar conta';
+        return setAuthErr(error.message);
+    }
+
+    /* Cria escola + perfil em uma transação via RPC para evitar estado parcial */
+    const { error: rpcErr } = await sb.rpc('create_school_and_profile', {
+        p_user_id:   data.user.id,
+        p_full_name: name,
+        p_school_name: school,
+    });
+
+    btn.disabled = false; btn.textContent = 'Criar conta';
+    if (rpcErr) return setAuthErr('Conta criada mas perfil falhou. Tente o login.');
+    setAuthErr('Conta criada! Verifique seu e-mail e faça login.');
+    showLoginSection();
+}
+
+async function logout() {
+    await sb.auth.signOut();
+}
+
+/* ─── Auth state machine ─────────────────────────────────────────────────── */
+sb.auth.onAuthStateChange(async (event, session) => {
+    if (!session) {
+        state.profile = null;
+        authOverlay().style.display = 'flex';
+        showLoginSection();
+        return;
+    }
+
+    const { data: profile, error } = await sb
+        .from('profiles')
+        .select('id, full_name, role, school_id')
+        .eq('id', session.user.id)
+        .single();
+
+    if (error || !profile) {
+        await sb.auth.signOut();
+        setAuthErr('Perfil não encontrado. Confirme seu e-mail ou entre em contato.');
+        authOverlay().style.display = 'flex';
+        return;
+    }
+
+    state.profile = profile;
+    document.getElementById('currentRole').textContent      = profile.full_name;
+    document.getElementById('currentRoleBadge').textContent =
+        { teacher: 'Professor', student: 'Aluno', admin: 'Admin' }[profile.role] ?? profile.role;
+
+    authOverlay().style.display = 'none';
+    applyRBAC();
+    subscribeToChanges();
+    showView('dashboard');
+});
+
+/* ─── Real-time — Supabase Realtime publica mudanças do Postgres ─────────── */
+let realtimeChannel = null;
+function subscribeToChanges() {
+    if (realtimeChannel) sb.removeChannel(realtimeChannel);
+    realtimeChannel = sb.channel('db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+            renderStudents();
+            renderDashboard();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+            renderTasks();
+            renderDashboard();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, () => {
+            renderNotices();
+            renderDashboard();
+        })
+        .subscribe();
+}
+
+/* ─── RBAC enforcement ───────────────────────────────────────────────────── */
 function applyRBAC() {
-    const p = RBAC[currentRole];
+    const p = RBAC[state.profile.role] ?? RBAC.student;
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.style.display = p.views.includes(btn.dataset.view) ? '' : 'none';
     });
@@ -27,103 +182,73 @@ function applyRBAC() {
     });
     const exportBtn = document.getElementById('exportBtn');
     if (exportBtn) exportBtn.style.display = p.canExport ? '' : 'none';
-    const activeView = document.querySelector('.view.active');
-    if (activeView) {
-        const name = activeView.id.replace('view-', '');
-        if (!p.views.includes(name)) showView('dashboard');
-        else {
-            ({ dashboard: renderDashboard, students: renderStudents, tasks: renderTasks,
-               notices: renderNotices, schedule: renderSchedule })[name]?.();
-        }
-    }
 }
 
-/* ── Schedule data ── */
-const SCHEDULE = [
-    { time:'07:00', mon:'Matemática', tue:'Português',   wed:'História',   thu:'Ciências',   fri:'Ed. Física' },
-    { time:'08:00', mon:'Português',  tue:'Matemática',  wed:'Ciências',   thu:'Matemática', fri:'Artes'      },
-    { time:'09:00', mon:'História',   tue:'Ciências',    wed:'Matemática', thu:'Português',  fri:'Inglês'     },
-    { time:'10:30', mon:'Ciências',   tue:'História',    wed:'Inglês',     thu:'História',   fri:'Matemática' },
-    { time:'11:30', mon:'Inglês',     tue:'Ed. Física',  wed:'Português',  thu:'Artes',      fri:'Português'  },
-];
-
-/* ── Seed demo data ── */
-if (!localStorage.getItem('ts_seeded')) {
-    const now = new Date().toISOString();
-    DB.students = [
-        { id:1, name:'Ana Souza',    cls:'3A', email:'ana@escola.edu.br',   createdAt: now },
-        { id:2, name:'Bruno Lima',   cls:'3A', email:'bruno@escola.edu.br', createdAt: now },
-        { id:3, name:'Carla Santos', cls:'2B', email:'carla@escola.edu.br', createdAt: now },
-    ];
-    DB.tasks = [
-        { id:1, title:'Lista de Exercícios — Cap. 5', subject:'Matemática', due:'2026-05-15', desc:'Exercícios pares da pág. 120-130.', done:false, createdAt: now },
-        { id:2, title:'Redação: Meio Ambiente',        subject:'Português',  due:'2026-05-20', desc:'Mínimo 30 linhas.',               done:true,  createdAt: now },
-        { id:3, title:'Mapa Conceitual — Células',     subject:'Ciências',   due:'2026-05-22', desc:'Usar caneta e régua.',            done:false, createdAt: now },
-    ];
-    DB.notices = [
-        { id:1, title:'Reunião de Pais — 20/05',  content:'A reunião será às 19h no auditório. Confirme presença.', date:'2026-05-07', createdAt: now },
-        { id:2, title:'Simulado ENEM — 28/05',    content:'Traga documento com foto. Início às 8h pontualmente.',   date:'2026-05-07', createdAt: now },
-    ];
-    localStorage.setItem('ts_seeded', '1');
-}
-
-/* ── Utilities ── */
-const uid = () => Date.now() + Math.floor(Math.random() * 1000);
-const formatDate = d => { if (!d) return ''; const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; };
-const debounce = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
-
-/* ── Toast ── */
-let toastTimer;
-function toast(msg, type = 'success') {
-    let el = document.getElementById('ts-toast');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'ts-toast';
-        document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    el.className = `ts-toast ts-toast-${type} show`;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
-}
-
-/* ── Navigation ── */
+/* ─── Navegação ──────────────────────────────────────────────────────────── */
 function showView(view) {
-    if (!RBAC[currentRole].views.includes(view)) return;
+    if (!state.profile) return;
+    const p = RBAC[state.profile.role] ?? RBAC.student;
+    if (!p.views.includes(view)) return;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById(`view-${view}`).classList.add('active');
+    document.getElementById(`view-${view}`)?.classList.add('active');
     document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
     ({ dashboard: renderDashboard, students: renderStudents, tasks: renderTasks,
        notices: renderNotices, schedule: renderSchedule })[view]?.();
 }
 
-/* ── Render ── */
-function renderDashboard() {
-    const tasks = DB.tasks, students = DB.students, notices = DB.notices;
+/* ─── Camada de dados (todo acesso vai ao Postgres via Supabase REST) ─────── */
+async function loadStudents() {
+    const { data, error } = await sb.from('students')
+        .select('*').eq('school_id', state.profile.school_id).order('name');
+    if (error) { toast('Erro ao carregar alunos.', 'error'); return []; }
+    return data;
+}
+
+async function loadTasks() {
+    const { data, error } = await sb.from('tasks')
+        .select('*').eq('school_id', state.profile.school_id)
+        .order('created_at', { ascending: false });
+    if (error) { toast('Erro ao carregar tarefas.', 'error'); return []; }
+    return data;
+}
+
+async function loadNotices() {
+    const { data, error } = await sb.from('notices')
+        .select('*').eq('school_id', state.profile.school_id)
+        .order('created_at', { ascending: false });
+    if (error) { toast('Erro ao carregar comunicados.', 'error'); return []; }
+    return data;
+}
+
+/* ─── Renders ────────────────────────────────────────────────────────────── */
+async function renderDashboard() {
+    const [students, tasks, notices] = await Promise.all([loadStudents(), loadTasks(), loadNotices()]);
     document.getElementById('statStudents').textContent = students.length;
     document.getElementById('statTasks').textContent    = tasks.length;
     document.getElementById('statDone').textContent     = tasks.filter(t => t.done).length;
     document.getElementById('statNotices').textContent  = notices.length;
     document.getElementById('dashPendingTasks').innerHTML =
         tasks.filter(t => !t.done).slice(0, 5)
-             .map(t => `<li><i class="fas fa-circle"></i>${t.title}</li>`).join('')
+             .map(t => `<li><i class="fas fa-circle"></i>${esc(t.title)}</li>`).join('')
         || '<li class="empty">Nenhuma tarefa pendente.</li>';
     document.getElementById('dashNotices').innerHTML =
         notices.slice(0, 3)
-               .map(n => `<li><i class="fas fa-circle"></i>${n.title}</li>`).join('')
+               .map(n => `<li><i class="fas fa-circle"></i>${esc(n.title)}</li>`).join('')
         || '<li class="empty">Nenhum comunicado.</li>';
 }
 
-function renderStudents() {
-    const canWrite = RBAC[currentRole].canWrite;
-    const filtered = DB.students.filter(s =>
-        !studentSearch || s.name.toLowerCase().includes(studentSearch.toLowerCase()));
+async function renderStudents() {
+    const canWrite = RBAC[state.profile.role]?.canWrite ?? false;
+    const all      = await loadStudents();
+    const filtered = state.studentSearch
+        ? all.filter(s => s.name.toLowerCase().includes(state.studentSearch.toLowerCase()))
+        : all;
     document.getElementById('studentsBody').innerHTML = filtered.length
         ? filtered.map(s => `<tr>
-            <td>${s.name}</td>
-            <td><span class="badge-class">${s.cls}</span></td>
-            <td>${s.email || '—'}</td>
+            <td>${esc(s.name)}</td>
+            <td><span class="badge-class">${esc(s.cls)}</span></td>
+            <td>${esc(s.email || '—')}</td>
             <td>${canWrite
                 ? `<div class="td-actions">
                      <button class="btn-icon-sm edit" data-action="edit-student" data-id="${s.id}" title="Editar"><i class="fas fa-edit"></i></button>
@@ -134,11 +259,11 @@ function renderStudents() {
         : `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-users"></i><p>Nenhum aluno encontrado.</p></div></td></tr>`;
 }
 
-function renderTasks() {
-    const canWrite = RBAC[currentRole].canWrite;
-    let tasks = DB.tasks;
-    if (taskFilter === 'pending') tasks = tasks.filter(t => !t.done);
-    if (taskFilter === 'done')    tasks = tasks.filter(t =>  t.done);
+async function renderTasks() {
+    const canWrite = RBAC[state.profile.role]?.canWrite ?? false;
+    let tasks = await loadTasks();
+    if (state.taskFilter === 'pending') tasks = tasks.filter(t => !t.done);
+    if (state.taskFilter === 'done')    tasks = tasks.filter(t =>  t.done);
     document.getElementById('tasksList').innerHTML = tasks.length
         ? tasks.map(t => `<div class="task-item ${t.done ? 'done' : ''}">
             <div class="task-check ${t.done ? 'checked' : ''}"
@@ -146,37 +271,37 @@ function renderTasks() {
                 ${t.done ? '<i class="fas fa-check"></i>' : ''}
             </div>
             <div class="task-body">
-                <div class="task-title">${t.title}</div>
+                <div class="task-title">${esc(t.title)}</div>
                 <div class="task-meta">
-                    <span><i class="fas fa-book"></i>${t.subject}</span>
-                    ${t.due ? `<span><i class="fas fa-calendar"></i>${formatDate(t.due)}</span>` : ''}
+                    <span><i class="fas fa-book"></i>${esc(t.subject || '')}</span>
+                    ${t.due_date ? `<span><i class="fas fa-calendar"></i>${formatDate(t.due_date)}</span>` : ''}
                 </div>
-                ${t.desc ? `<div class="task-desc">${t.desc}</div>` : ''}
+                ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
             </div>
             ${canWrite ? `<button class="task-del" data-action="del-task" data-id="${t.id}"><i class="fas fa-times"></i></button>` : ''}
           </div>`).join('')
         : '<div class="empty-state"><i class="fas fa-tasks"></i><p>Nenhuma tarefa.</p></div>';
 }
 
-function renderNotices() {
-    const canWrite = RBAC[currentRole].canWrite;
-    document.getElementById('noticesList').innerHTML = DB.notices.length
-        ? DB.notices.map(n => `<div class="notice-item">
+async function renderNotices() {
+    const canWrite = RBAC[state.profile.role]?.canWrite ?? false;
+    const notices  = await loadNotices();
+    document.getElementById('noticesList').innerHTML = notices.length
+        ? notices.map(n => `<div class="notice-item">
             <div class="notice-header">
-                <span class="notice-title">${n.title}</span>
+                <span class="notice-title">${esc(n.title)}</span>
                 <div style="display:flex;align-items:center;gap:.7rem">
-                    <span class="notice-date">${n.date}</span>
+                    <span class="notice-date">${n.created_at.split('T')[0]}</span>
                     ${canWrite ? `<button class="btn-icon-sm" data-action="del-notice" data-id="${n.id}"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
             </div>
-            <div class="notice-content">${n.content}</div>
+            <div class="notice-content">${esc(n.content)}</div>
           </div>`).join('')
         : '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>Nenhum comunicado.</p></div>';
 }
 
 function renderSchedule() {
-    const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-    const keys  = ['mon', 'tue', 'wed', 'thu', 'fri'];
+    const days = ['Segunda','Terça','Quarta','Quinta','Sexta'], keys = ['mon','tue','wed','thu','fri'];
     let html = '<div class="sch-header">Hora</div>';
     days.forEach(d => html += `<div class="sch-header">${d}</div>`);
     SCHEDULE.forEach(row => {
@@ -186,15 +311,15 @@ function renderSchedule() {
     document.getElementById('scheduleGrid').innerHTML = html;
 }
 
-/* ── Modal helpers ── */
-const openModal    = id => document.getElementById(id).classList.add('open');
-const closeModal   = id => document.getElementById(id).classList.remove('open');
+/* ─── Modais ─────────────────────────────────────────────────────────────── */
+const openModal      = id => document.getElementById(id).classList.add('open');
+const closeModal     = id => document.getElementById(id).classList.remove('open');
 const closeAllModals = () => document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
 
-function openEditStudent(id) {
-    const s = DB.students.find(s => s.id === id);
+async function openEditStudent(id) {
+    const { data: s } = await sb.from('students').select('*').eq('id', id).single();
     if (!s) return;
-    editingStudentId = id;
+    state.editingStudentId = id;
     document.getElementById('sName').value  = s.name;
     document.getElementById('sClass').value = s.cls;
     document.getElementById('sEmail').value = s.email || '';
@@ -202,48 +327,51 @@ function openEditStudent(id) {
     openModal('studentModal');
 }
 
-/* ── CRUD ── */
-function saveStudent() {
+/* ─── CRUD (escrita rejeitada pelo RLS se o role não autorizar) ───────────── */
+async function saveStudent() {
     const name  = document.getElementById('sName').value.trim();
     const cls   = document.getElementById('sClass').value.trim();
     const email = document.getElementById('sEmail').value.trim();
     if (!name) return toast('Nome é obrigatório.', 'error');
     if (!cls)  return toast('Turma é obrigatória.', 'error');
-    const students = DB.students;
-    if (editingStudentId) {
-        const s = students.find(s => s.id === editingStudentId);
-        if (s) { s.name = name; s.cls = cls; s.email = email; }
+
+    if (state.editingStudentId) {
+        const { error } = await sb.from('students')
+            .update({ name, cls, email }).eq('id', state.editingStudentId);
+        if (error) return toast('Erro ao atualizar: ' + error.message, 'error');
         toast('Aluno atualizado.');
     } else {
-        students.push({ id: uid(), name, cls, email, createdAt: new Date().toISOString() });
+        const { error } = await sb.from('students')
+            .insert({ name, cls, email, school_id: state.profile.school_id });
+        if (error) return toast('Erro ao salvar: ' + error.message, 'error');
         toast('Aluno adicionado.');
     }
-    DB.students = students;
     closeModal('studentModal');
     renderStudents();
     renderDashboard();
 }
 
-function deleteStudent(id) {
+async function deleteStudent(id) {
     if (!confirm('Excluir este aluno?')) return;
-    DB.students = DB.students.filter(s => s.id !== id);
+    const { error } = await sb.from('students').delete().eq('id', id);
+    if (error) return toast('Erro ao excluir.', 'error');
     renderStudents();
     renderDashboard();
     toast('Aluno removido.', 'warn');
 }
 
-function saveTask() {
+async function saveTask() {
     const title   = document.getElementById('tTitle').value.trim();
     const subject = document.getElementById('tSubject').value.trim();
     if (!title) return toast('Título é obrigatório.', 'error');
-    const tasks = DB.tasks;
-    tasks.unshift({
-        id: uid(), title, subject,
-        due: document.getElementById('tDue').value,
-        desc: document.getElementById('tDesc').value.trim(),
-        done: false, createdAt: new Date().toISOString(),
+    const { error } = await sb.from('tasks').insert({
+        title, subject,
+        due_date:    document.getElementById('tDue').value || null,
+        description: document.getElementById('tDesc').value.trim(),
+        done:        false,
+        school_id:   state.profile.school_id,
     });
-    DB.tasks = tasks;
+    if (error) return toast('Erro ao salvar tarefa.', 'error');
     ['tTitle','tSubject','tDue','tDesc'].forEach(id => document.getElementById(id).value = '');
     closeModal('taskModal');
     renderTasks();
@@ -251,34 +379,30 @@ function saveTask() {
     toast('Tarefa adicionada.');
 }
 
-function toggleTask(id) {
-    const tasks = DB.tasks;
-    const t = tasks.find(t => t.id === id);
-    if (t) t.done = !t.done;
-    DB.tasks = tasks;
+async function toggleTask(id) {
+    const { data: t } = await sb.from('tasks').select('done').eq('id', id).single();
+    if (!t) return;
+    await sb.from('tasks').update({ done: !t.done }).eq('id', id);
     renderTasks();
     renderDashboard();
 }
 
-function deleteTask(id) {
-    DB.tasks = DB.tasks.filter(t => t.id !== id);
+async function deleteTask(id) {
+    await sb.from('tasks').delete().eq('id', id);
     renderTasks();
     renderDashboard();
     toast('Tarefa removida.', 'warn');
 }
 
-function saveNotice() {
+async function saveNotice() {
     const title   = document.getElementById('nTitle').value.trim();
     const content = document.getElementById('nContent').value.trim();
     if (!title)   return toast('Título é obrigatório.', 'error');
     if (!content) return toast('Conteúdo é obrigatório.', 'error');
-    const notices = DB.notices;
-    notices.unshift({
-        id: uid(), title, content,
-        date: new Date().toISOString().split('T')[0],
-        createdAt: new Date().toISOString(),
+    const { error } = await sb.from('notices').insert({
+        title, content, school_id: state.profile.school_id,
     });
-    DB.notices = notices;
+    if (error) return toast('Erro ao publicar.', 'error');
     ['nTitle','nContent'].forEach(id => document.getElementById(id).value = '');
     closeModal('noticeModal');
     renderNotices();
@@ -286,46 +410,40 @@ function saveNotice() {
     toast('Comunicado publicado.');
 }
 
-function deleteNotice(id) {
-    DB.notices = DB.notices.filter(n => n.id !== id);
+async function deleteNotice(id) {
+    await sb.from('notices').delete().eq('id', id);
     renderNotices();
     renderDashboard();
     toast('Comunicado removido.', 'warn');
 }
 
-/* ── Export (admin only) ── */
-function exportData() {
-    const data = {
-        students: DB.students, tasks: DB.tasks, notices: DB.notices,
-        exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+/* ─── Export JSON (só admin) ────────────────────────────────────────────── */
+async function exportData() {
+    const [students, tasks, notices] = await Promise.all([loadStudents(), loadTasks(), loadNotices()]);
+    const payload = { students, tasks, notices, school_id: state.profile.school_id, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
     a.download = `takstud-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     toast('Dados exportados.');
 }
 
-/* ── Init ── */
+/* ─── Init ───────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-    /* Nav */
-    document.querySelectorAll('.nav-item').forEach(btn =>
-        btn.addEventListener('click', () => showView(btn.dataset.view)));
+    /* Auth buttons */
+    document.getElementById('btnLogin').addEventListener('click', login);
+    document.getElementById('btnRegister').addEventListener('click', register);
+    document.getElementById('btnShowRegister').addEventListener('click', showRegisterSection);
+    document.getElementById('btnShowLogin').addEventListener('click', showLoginSection);
+    document.getElementById('btnLogout').addEventListener('click', logout);
 
-    /* Role switcher — triggers real RBAC enforcement */
-    document.querySelectorAll('.role-btn').forEach(btn =>
-        btn.addEventListener('click', () => {
-            currentRole = btn.dataset.role;
-            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('currentRole').textContent =
-                { teacher: 'Prof. Demo', student: 'Aluno Demo', admin: 'Admin' }[currentRole];
-            applyRBAC();
-        }));
+    /* Enter no formulário de login */
+    ['authEmail','authPassword'].forEach(id =>
+        document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
 
-    /* Export button injected into topbar */
+    /* Export button (injetado no topbar, visível só para admin) */
     const exportBtn = document.createElement('button');
     exportBtn.id        = 'exportBtn';
     exportBtn.className = 'btn-export';
@@ -334,9 +452,13 @@ document.addEventListener('DOMContentLoaded', () => {
     exportBtn.addEventListener('click', exportData);
     document.querySelector('.topbar-user').prepend(exportBtn);
 
+    /* Nav */
+    document.querySelectorAll('.nav-item').forEach(btn =>
+        btn.addEventListener('click', () => showView(btn.dataset.view)));
+
     /* Students */
     document.getElementById('openAddStudent').addEventListener('click', () => {
-        editingStudentId = null;
+        state.editingStudentId = null;
         ['sName','sClass','sEmail'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('studentModalTitle').textContent = 'Adicionar Aluno';
         openModal('studentModal');
@@ -344,17 +466,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeStudentModal').addEventListener('click', () => closeModal('studentModal'));
     document.getElementById('saveStudent').addEventListener('click', saveStudent);
     document.getElementById('studentSearch').addEventListener('input', debounce(e => {
-        studentSearch = e.target.value;
+        state.studentSearch = e.target.value;
         renderStudents();
     }));
-
-    /* Event delegation — students table */
     document.getElementById('studentsBody').addEventListener('click', e => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
-        const id = Number(btn.dataset.id);
-        if (btn.dataset.action === 'edit-student') openEditStudent(id);
-        else if (btn.dataset.action === 'del-student') deleteStudent(id);
+        if (btn.dataset.action === 'edit-student') openEditStudent(btn.dataset.id);
+        else if (btn.dataset.action === 'del-student') deleteStudent(btn.dataset.id);
     });
 
     /* Tasks */
@@ -363,57 +482,47 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('saveTask').addEventListener('click', saveTask);
     document.querySelectorAll('.filter-btn').forEach(btn =>
         btn.addEventListener('click', () => {
-            taskFilter = btn.dataset.filter;
+            state.taskFilter = btn.dataset.filter;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderTasks();
         }));
-
-    /* Event delegation — tasks list */
     document.getElementById('tasksList').addEventListener('click', e => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
-        const id = Number(btn.dataset.id);
-        if (btn.dataset.action === 'toggle-task') toggleTask(id);
-        else if (btn.dataset.action === 'del-task') deleteTask(id);
+        if (btn.dataset.action === 'toggle-task') toggleTask(btn.dataset.id);
+        else if (btn.dataset.action === 'del-task') deleteTask(btn.dataset.id);
     });
 
     /* Notices */
     document.getElementById('openAddNotice').addEventListener('click', () => openModal('noticeModal'));
     document.getElementById('closeNoticeModal').addEventListener('click', () => closeModal('noticeModal'));
     document.getElementById('saveNotice').addEventListener('click', saveNotice);
-
-    /* Event delegation — notices list */
     document.getElementById('noticesList').addEventListener('click', e => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
-        if (btn.dataset.action === 'del-notice') deleteNotice(Number(btn.dataset.id));
+        if (btn.dataset.action === 'del-notice') deleteNotice(btn.dataset.id);
     });
 
-    /* Backdrop click to close any modal */
+    /* Backdrop click fecha qualquer modal */
     document.querySelectorAll('.modal').forEach(m =>
         m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
 
-    /* Keyboard shortcuts */
+    /* Atalhos de teclado */
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') { closeAllModals(); return; }
-
         if (e.ctrlKey && e.key === 'n') {
             e.preventDefault();
-            if (!RBAC[currentRole].canWrite) return;
+            if (!state.profile || !RBAC[state.profile.role]?.canWrite) return;
             const active = document.querySelector('.view.active');
             if (!active) return;
-            const map = {
-                'view-students': 'studentModal',
-                'view-tasks':    'taskModal',
-                'view-notices':  'noticeModal',
-            };
+            const map = { 'view-students':'studentModal', 'view-tasks':'taskModal', 'view-notices':'noticeModal' };
             if (map[active.id]) openModal(map[active.id]);
         }
     });
 
-    /* Enter to save in modal (skips textarea) */
-    ['studentModal', 'taskModal', 'noticeModal'].forEach(modalId => {
+    /* Enter para salvar dentro de modal (exceto textarea) */
+    ['studentModal','taskModal','noticeModal'].forEach(modalId => {
         document.getElementById(modalId).addEventListener('keydown', e => {
             if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
@@ -421,6 +530,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
-    showView('dashboard');
 });

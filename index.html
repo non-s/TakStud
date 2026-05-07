@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TakStud — Gestão Educacional</title>
-    <meta name="description" content="Sistema web de gestão educacional para professores, alunos e responsáveis.">
+    <meta name="description" content="Sistema web de gestão educacional para professores, alunos e administradores.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -12,18 +12,42 @@
 </head>
 <body>
 
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+        <div class="auth-logo"><i class="fas fa-graduation-cap"></i><span>TakStud</span></div>
+
+        <!-- Login -->
+        <div id="loginSection">
+            <p class="auth-subtitle">Faça login para continuar</p>
+            <input class="field" id="authEmail"    type="email"    placeholder="E-mail" autocomplete="username" />
+            <input class="field" id="authPassword" type="password" placeholder="Senha"  autocomplete="current-password" />
+            <button class="btn-save auth-btn" id="btnLogin">Entrar</button>
+            <p class="auth-switch">Novo por aqui? <button class="btn-link" id="btnShowRegister">Criar conta</button></p>
+        </div>
+
+        <!-- Register -->
+        <div id="registerSection" style="display:none">
+            <p class="auth-subtitle">Crie sua conta</p>
+            <input class="field" id="regName"     placeholder="Seu nome completo" />
+            <input class="field" id="regSchool"   placeholder="Nome da escola / instituição" />
+            <input class="field" id="regEmail"    type="email"    placeholder="E-mail" autocomplete="username" />
+            <input class="field" id="regPassword" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password" />
+            <button class="btn-save auth-btn" id="btnRegister">Criar conta</button>
+            <p class="auth-switch">Já tem conta? <button class="btn-link" id="btnShowLogin">Entrar</button></p>
+        </div>
+
+        <p class="auth-error" id="authError"></p>
+    </div>
+</div>
+
 <header class="topbar">
     <div class="topbar-logo"><i class="fas fa-graduation-cap"></i><span>TakStud</span></div>
-    <div class="topbar-center">
-        <span class="role-label">Papel:</span>
-        <div class="role-switcher">
-            <button class="role-btn active" data-role="teacher"><i class="fas fa-chalkboard-teacher"></i> Professor</button>
-            <button class="role-btn" data-role="student"><i class="fas fa-user-graduate"></i> Aluno</button>
-            <button class="role-btn" data-role="admin"><i class="fas fa-shield-alt"></i> Admin</button>
-        </div>
-    </div>
+    <div class="topbar-center"></div>
     <div class="topbar-user">
-        <span id="currentRole">Prof. Demo</span>
+        <span id="currentRole" class="user-name">—</span>
+        <span id="currentRoleBadge" class="role-badge">—</span>
+        <button id="btnLogout" class="btn-logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
         <div class="avatar"><i class="fas fa-user"></i></div>
     </div>
 </header>
@@ -50,19 +74,19 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statStudents">0</div><div class="stat-label">Alunos</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statStudents">—</div><div class="stat-label">Alunos</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon accent2"><i class="fas fa-tasks"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statTasks">0</div><div class="stat-label">Tarefas</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statTasks">—</div><div class="stat-label">Tarefas</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon accent3"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statDone">0</div><div class="stat-label">Concluídas</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statDone">—</div><div class="stat-label">Concluídas</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon accent4"><i class="fas fa-bullhorn"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statNotices">0</div><div class="stat-label">Comunicados</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statNotices">—</div><div class="stat-label">Comunicados</div></div>
                 </div>
             </div>
             <div class="dash-grid">
@@ -81,12 +105,12 @@
             <div class="modal" id="studentModal">
                 <div class="modal-box">
                     <h3 id="studentModalTitle">Adicionar Aluno</h3>
-                    <input class="field" id="sName" placeholder="Nome completo" />
+                    <input class="field" id="sName"  placeholder="Nome completo" />
                     <input class="field" id="sClass" placeholder="Turma (ex: 3A)" />
                     <input class="field" id="sEmail" placeholder="E-mail" type="email" />
                     <div class="modal-actions">
                         <button class="btn-cancel" id="closeStudentModal">Cancelar</button>
-                        <button class="btn-save" id="saveStudent">Salvar</button>
+                        <button class="btn-save"   id="saveStudent">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -109,13 +133,13 @@
             <div class="modal" id="taskModal">
                 <div class="modal-box">
                     <h3>Nova Tarefa</h3>
-                    <input class="field" id="tTitle" placeholder="Título da tarefa" />
+                    <input class="field" id="tTitle"   placeholder="Título da tarefa" />
                     <input class="field" id="tSubject" placeholder="Disciplina" />
-                    <input class="field" id="tDue" type="date" />
+                    <input class="field" id="tDue"     type="date" />
                     <textarea class="field" id="tDesc" placeholder="Descrição (opcional)" rows="3"></textarea>
                     <div class="modal-actions">
                         <button class="btn-cancel" id="closeTaskModal">Cancelar</button>
-                        <button class="btn-save" id="saveTask">Salvar</button>
+                        <button class="btn-save"   id="saveTask">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -141,7 +165,7 @@
                     <textarea class="field" id="nContent" placeholder="Conteúdo do comunicado..." rows="4"></textarea>
                     <div class="modal-actions">
                         <button class="btn-cancel" id="closeNoticeModal">Cancelar</button>
-                        <button class="btn-save" id="saveNotice">Publicar</button>
+                        <button class="btn-save"   id="saveNotice">Publicar</button>
                     </div>
                 </div>
             </div>
@@ -157,6 +181,7 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
 </body>
 </html>
