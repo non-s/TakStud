@@ -24,13 +24,13 @@ if(!localStorage.getItem('ts_seeded')){
     {id:3,name:'Carla Santos',cls:'2B',email:'carla@escola.edu.br'},
   ];
   DB.tasks=[
-    {id:1,title:'Lista de Exercícios — Cap. 5',subject:'Matemática',due:'2025-05-15',desc:'Exercícios pares da pág. 120-130.',done:false},
-    {id:2,title:'Redação: Meio Ambiente',subject:'Português',due:'2025-05-20',desc:'Mínimo 30 linhas.',done:true},
-    {id:3,title:'Mapa Conceitual — Células',subject:'Ciências',due:'2025-05-22',desc:'Usar caneta e régua.',done:false},
+    {id:1,title:'Lista de Exercícios — Cap. 5',subject:'Matemática',due:'2026-05-15',desc:'Exercícios pares da pág. 120-130.',done:false},
+    {id:2,title:'Redação: Meio Ambiente',subject:'Português',due:'2026-05-20',desc:'Mínimo 30 linhas.',done:true},
+    {id:3,title:'Mapa Conceitual — Células',subject:'Ciências',due:'2026-05-22',desc:'Usar caneta e régua.',done:false},
   ];
   DB.notices=[
-    {id:1,title:'Reunião de Pais — 20/05',content:'A reunião será às 19h no auditório. Confirme presença.',date:'2025-05-07'},
-    {id:2,title:'Simulado ENEM — 28/05',content:'Traga documento com foto. Início às 8h pontualmente.',date:'2025-05-07'},
+    {id:1,title:'Reunião de Pais — 20/05',content:'A reunião será às 19h no auditório. Confirme presença.',date:'2026-05-07'},
+    {id:2,title:'Simulado ENEM — 28/05',content:'Traga documento com foto. Início às 8h pontualmente.',date:'2026-05-07'},
   ];
   localStorage.setItem('ts_seeded','1');
 }
