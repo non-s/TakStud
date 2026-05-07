@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TakStud — Gestão Educacional</title>
+    <meta name="description" content="Sistema web de gestão educacional para professores, alunos e responsáveis.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-logo"><i class="fas fa-graduation-cap"></i><span>TakStud</span></div>
+    <div class="topbar-center">
+        <span class="role-label">Papel:</span>
+        <div class="role-switcher">
+            <button class="role-btn active" data-role="teacher"><i class="fas fa-chalkboard-teacher"></i> Professor</button>
+            <button class="role-btn" data-role="student"><i class="fas fa-user-graduate"></i> Aluno</button>
+            <button class="role-btn" data-role="admin"><i class="fas fa-shield-alt"></i> Admin</button>
+        </div>
+    </div>
+    <div class="topbar-user">
+        <span id="currentRole">Prof. Demo</span>
+        <div class="avatar"><i class="fas fa-user"></i></div>
+    </div>
+</header>
+
+<div class="layout">
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidenav">
+            <button class="nav-item active" data-view="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></button>
+            <button class="nav-item" data-view="students"><i class="fas fa-users"></i><span>Alunos</span></button>
+            <button class="nav-item" data-view="tasks"><i class="fas fa-tasks"></i><span>Tarefas</span></button>
+            <button class="nav-item" data-view="notices"><i class="fas fa-bullhorn"></i><span>Comunicados</span></button>
+            <button class="nav-item" data-view="schedule"><i class="fas fa-calendar-week"></i><span>Horários</span></button>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <!-- DASHBOARD -->
+        <section class="view active" id="view-dashboard">
+            <div class="view-header">
+                <span class="breadcrumb">$ takstud --dashboard</span>
+                <h1>Dashboard</h1>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-body"><div class="stat-num" id="statStudents">0</div><div class="stat-label">Alunos</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon accent2"><i class="fas fa-tasks"></i></div>
+                    <div class="stat-body"><div class="stat-num" id="statTasks">0</div><div class="stat-label">Tarefas</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon accent3"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-body"><div class="stat-num" id="statDone">0</div><div class="stat-label">Concluídas</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon accent4"><i class="fas fa-bullhorn"></i></div>
+                    <div class="stat-body"><div class="stat-num" id="statNotices">0</div><div class="stat-label">Comunicados</div></div>
+                </div>
+            </div>
+            <div class="dash-grid">
+                <div class="dash-card"><h3><i class="fas fa-clock"></i> Tarefas Pendentes</h3><ul class="mini-list" id="dashPendingTasks"></ul></div>
+                <div class="dash-card"><h3><i class="fas fa-bullhorn"></i> Últimos Comunicados</h3><ul class="mini-list" id="dashNotices"></ul></div>
+            </div>
+        </section>
+
+        <!-- STUDENTS -->
+        <section class="view" id="view-students">
+            <div class="view-header">
+                <span class="breadcrumb">$ takstud --students</span>
+                <h1>Alunos</h1>
+                <button class="btn-add" id="openAddStudent"><i class="fas fa-plus"></i> Novo Aluno</button>
+            </div>
+            <div class="modal" id="studentModal">
+                <div class="modal-box">
+                    <h3 id="studentModalTitle">Adicionar Aluno</h3>
+                    <input class="field" id="sName" placeholder="Nome completo" />
+                    <input class="field" id="sClass" placeholder="Turma (ex: 3A)" />
+                    <input class="field" id="sEmail" placeholder="E-mail" type="email" />
+                    <div class="modal-actions">
+                        <button class="btn-cancel" id="closeStudentModal">Cancelar</button>
+                        <button class="btn-save" id="saveStudent">Salvar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="studentSearch" placeholder="Buscar aluno..." /></div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Nome</th><th>Turma</th><th>E-mail</th><th>Ações</th></tr></thead>
+                    <tbody id="studentsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TASKS -->
+        <section class="view" id="view-tasks">
+            <div class="view-header">
+                <span class="breadcrumb">$ takstud --tasks</span>
+                <h1>Tarefas</h1>
+                <button class="btn-add" id="openAddTask"><i class="fas fa-plus"></i> Nova Tarefa</button>
+            </div>
+            <div class="modal" id="taskModal">
+                <div class="modal-box">
+                    <h3>Nova Tarefa</h3>
+                    <input class="field" id="tTitle" placeholder="Título da tarefa" />
+                    <input class="field" id="tSubject" placeholder="Disciplina" />
+                    <input class="field" id="tDue" type="date" />
+                    <textarea class="field" id="tDesc" placeholder="Descrição (opcional)" rows="3"></textarea>
+                    <div class="modal-actions">
+                        <button class="btn-cancel" id="closeTaskModal">Cancelar</button>
+                        <button class="btn-save" id="saveTask">Salvar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tasks-filters">
+                <button class="filter-btn active" data-filter="all">Todas</button>
+                <button class="filter-btn" data-filter="pending">Pendentes</button>
+                <button class="filter-btn" data-filter="done">Concluídas</button>
+            </div>
+            <div class="tasks-list" id="tasksList"></div>
+        </section>
+
+        <!-- NOTICES -->
+        <section class="view" id="view-notices">
+            <div class="view-header">
+                <span class="breadcrumb">$ takstud --notices</span>
+                <h1>Comunicados</h1>
+                <button class="btn-add" id="openAddNotice"><i class="fas fa-plus"></i> Novo Comunicado</button>
+            </div>
+            <div class="modal" id="noticeModal">
+                <div class="modal-box">
+                    <h3>Novo Comunicado</h3>
+                    <input class="field" id="nTitle" placeholder="Título" />
+                    <textarea class="field" id="nContent" placeholder="Conteúdo do comunicado..." rows="4"></textarea>
+                    <div class="modal-actions">
+                        <button class="btn-cancel" id="closeNoticeModal">Cancelar</button>
+                        <button class="btn-save" id="saveNotice">Publicar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="notices-list" id="noticesList"></div>
+        </section>
+
+        <!-- SCHEDULE -->
+        <section class="view" id="view-schedule">
+            <div class="view-header"><span class="breadcrumb">$ takstud --schedule</span><h1>Grade Horária</h1></div>
+            <div class="schedule-grid" id="scheduleGrid"></div>
+        </section>
+
+    </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
