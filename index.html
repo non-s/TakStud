@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TakStud — Educational Management</title>
-    <meta name="description" content="Web-based educational management system for teachers, students and admins.">
+    <title>TakStud — Gestão Educacional</title>
+    <meta name="description" content="Sistema de gestão educacional para professores, alunos e administradores.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -12,29 +12,29 @@
 </head>
 <body>
 
-<!-- AUTH OVERLAY -->
+<!-- SOBREPOSIÇÃO DE AUTENTICAÇÃO -->
 <div class="auth-overlay" id="authOverlay">
     <div class="auth-card">
         <div class="auth-logo"><i class="fas fa-graduation-cap"></i><span>TakStud</span></div>
 
         <!-- Login -->
         <div id="loginSection">
-            <p class="auth-subtitle">Sign in to continue</p>
+            <p class="auth-subtitle">Entre para continuar</p>
             <input class="field" id="authEmail"    type="email"    placeholder="E-mail" autocomplete="username" />
-            <input class="field" id="authPassword" type="password" placeholder="Password"  autocomplete="current-password" />
-            <button class="btn-save auth-btn" id="btnLogin">Sign In</button>
-            <p class="auth-switch">New here? <button class="btn-link" id="btnShowRegister">Create account</button></p>
+            <input class="field" id="authPassword" type="password" placeholder="Senha"  autocomplete="current-password" />
+            <button class="btn-save auth-btn" id="btnLogin">Entrar</button>
+            <p class="auth-switch">Novo aqui? <button class="btn-link" id="btnShowRegister">Criar conta</button></p>
         </div>
 
-        <!-- Register -->
+        <!-- Cadastro -->
         <div id="registerSection" style="display:none">
-            <p class="auth-subtitle">Create your account</p>
-            <input class="field" id="regName"     placeholder="Full name" />
-            <input class="field" id="regSchool"   placeholder="School / institution name" />
+            <p class="auth-subtitle">Crie sua conta</p>
+            <input class="field" id="regName"     placeholder="Nome completo" />
+            <input class="field" id="regSchool"   placeholder="Nome da escola / instituição" />
             <input class="field" id="regEmail"    type="email"    placeholder="E-mail" autocomplete="username" />
-            <input class="field" id="regPassword" type="password" placeholder="Password (min. 6 chars)" autocomplete="new-password" />
-            <button class="btn-save auth-btn" id="btnRegister">Create account</button>
-            <p class="auth-switch">Already have an account? <button class="btn-link" id="btnShowLogin">Sign in</button></p>
+            <input class="field" id="regPassword" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password" />
+            <button class="btn-save auth-btn" id="btnRegister">Criar conta</button>
+            <p class="auth-switch">Já tem uma conta? <button class="btn-link" id="btnShowLogin">Entrar</button></p>
         </div>
 
         <p class="auth-error" id="authError"></p>
@@ -47,7 +47,7 @@
     <div class="topbar-user">
         <span id="currentRole" class="user-name">—</span>
         <span id="currentRoleBadge" class="role-badge">—</span>
-        <button id="btnLogout" class="btn-logout" title="Sign out"><i class="fas fa-sign-out-alt"></i></button>
+        <button id="btnLogout" class="btn-logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
         <div class="avatar"><i class="fas fa-user"></i></div>
     </div>
 </header>
@@ -56,10 +56,10 @@
     <aside class="sidebar" id="sidebar">
         <nav class="sidenav">
             <button class="nav-item active" data-view="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></button>
-            <button class="nav-item" data-view="students"><i class="fas fa-users"></i><span>Students</span></button>
-            <button class="nav-item" data-view="tasks"><i class="fas fa-tasks"></i><span>Tasks</span></button>
-            <button class="nav-item" data-view="notices"><i class="fas fa-bullhorn"></i><span>Notices</span></button>
-            <button class="nav-item" data-view="schedule"><i class="fas fa-calendar-week"></i><span>Schedule</span></button>
+            <button class="nav-item" data-view="students"><i class="fas fa-users"></i><span>Alunos</span></button>
+            <button class="nav-item" data-view="tasks"><i class="fas fa-tasks"></i><span>Tarefas</span></button>
+            <button class="nav-item" data-view="notices"><i class="fas fa-bullhorn"></i><span>Avisos</span></button>
+            <button class="nav-item" data-view="schedule"><i class="fas fa-calendar-week"></i><span>Horários</span></button>
         </nav>
     </aside>
 
@@ -74,107 +74,107 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statStudents">—</div><div class="stat-label">Students</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statStudents">—</div><div class="stat-label">Alunos</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon accent2"><i class="fas fa-tasks"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statTasks">—</div><div class="stat-label">Tasks</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statTasks">—</div><div class="stat-label">Tarefas</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon accent3"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statDone">—</div><div class="stat-label">Completed</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statDone">—</div><div class="stat-label">Concluídas</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon accent4"><i class="fas fa-bullhorn"></i></div>
-                    <div class="stat-body"><div class="stat-num" id="statNotices">—</div><div class="stat-label">Notices</div></div>
+                    <div class="stat-body"><div class="stat-num" id="statNotices">—</div><div class="stat-label">Avisos</div></div>
                 </div>
             </div>
             <div class="dash-grid">
-                <div class="dash-card"><h3><i class="fas fa-clock"></i> Pending Tasks</h3><ul class="mini-list" id="dashPendingTasks"></ul></div>
-                <div class="dash-card"><h3><i class="fas fa-bullhorn"></i> Latest Notices</h3><ul class="mini-list" id="dashNotices"></ul></div>
+                <div class="dash-card"><h3><i class="fas fa-clock"></i> Tarefas Pendentes</h3><ul class="mini-list" id="dashPendingTasks"></ul></div>
+                <div class="dash-card"><h3><i class="fas fa-bullhorn"></i> Últimos Avisos</h3><ul class="mini-list" id="dashNotices"></ul></div>
             </div>
         </section>
 
-        <!-- STUDENTS -->
+        <!-- ALUNOS -->
         <section class="view" id="view-students">
             <div class="view-header">
                 <span class="breadcrumb">$ takstud --students</span>
-                <h1>Students</h1>
-                <button class="btn-add" id="openAddStudent"><i class="fas fa-plus"></i> New Student</button>
+                <h1>Alunos</h1>
+                <button class="btn-add" id="openAddStudent"><i class="fas fa-plus"></i> Novo Aluno</button>
             </div>
             <div class="modal" id="studentModal">
                 <div class="modal-box">
-                    <h3 id="studentModalTitle">Add Student</h3>
-                    <input class="field" id="sName"  placeholder="Full name" />
-                    <input class="field" id="sClass" placeholder="Class (e.g. 3A)" />
+                    <h3 id="studentModalTitle">Adicionar Aluno</h3>
+                    <input class="field" id="sName"  placeholder="Nome completo" />
+                    <input class="field" id="sClass" placeholder="Turma (ex: 3A)" />
                     <input class="field" id="sEmail" placeholder="E-mail" type="email" />
                     <div class="modal-actions">
-                        <button class="btn-cancel" id="closeStudentModal">Cancel</button>
-                        <button class="btn-save"   id="saveStudent">Save</button>
+                        <button class="btn-cancel" id="closeStudentModal">Cancelar</button>
+                        <button class="btn-save"   id="saveStudent">Salvar</button>
                     </div>
                 </div>
             </div>
-            <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="studentSearch" placeholder="Search student..." /></div>
+            <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="studentSearch" placeholder="Buscar aluno..." /></div>
             <div class="table-wrap">
                 <table class="data-table">
-                    <thead><tr><th>Name</th><th>Class</th><th>E-mail</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Nome</th><th>Turma</th><th>E-mail</th><th>Ações</th></tr></thead>
                     <tbody id="studentsBody"></tbody>
                 </table>
             </div>
         </section>
 
-        <!-- TASKS -->
+        <!-- TAREFAS -->
         <section class="view" id="view-tasks">
             <div class="view-header">
                 <span class="breadcrumb">$ takstud --tasks</span>
-                <h1>Tasks</h1>
-                <button class="btn-add" id="openAddTask"><i class="fas fa-plus"></i> New Task</button>
+                <h1>Tarefas</h1>
+                <button class="btn-add" id="openAddTask"><i class="fas fa-plus"></i> Nova Tarefa</button>
             </div>
             <div class="modal" id="taskModal">
                 <div class="modal-box">
-                    <h3>New Task</h3>
-                    <input class="field" id="tTitle"   placeholder="Task title" />
-                    <input class="field" id="tSubject" placeholder="Subject" />
+                    <h3>Nova Tarefa</h3>
+                    <input class="field" id="tTitle"   placeholder="Título da tarefa" />
+                    <input class="field" id="tSubject" placeholder="Disciplina" />
                     <input class="field" id="tDue"     type="date" />
-                    <textarea class="field" id="tDesc" placeholder="Description (optional)" rows="3"></textarea>
+                    <textarea class="field" id="tDesc" placeholder="Descrição (opcional)" rows="3"></textarea>
                     <div class="modal-actions">
-                        <button class="btn-cancel" id="closeTaskModal">Cancel</button>
-                        <button class="btn-save"   id="saveTask">Save</button>
+                        <button class="btn-cancel" id="closeTaskModal">Cancelar</button>
+                        <button class="btn-save"   id="saveTask">Salvar</button>
                     </div>
                 </div>
             </div>
             <div class="tasks-filters">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="pending">Pending</button>
-                <button class="filter-btn" data-filter="done">Completed</button>
+                <button class="filter-btn active" data-filter="all">Todas</button>
+                <button class="filter-btn" data-filter="pending">Pendentes</button>
+                <button class="filter-btn" data-filter="done">Concluídas</button>
             </div>
             <div class="tasks-list" id="tasksList"></div>
         </section>
 
-        <!-- NOTICES -->
+        <!-- AVISOS -->
         <section class="view" id="view-notices">
             <div class="view-header">
                 <span class="breadcrumb">$ takstud --notices</span>
-                <h1>Notices</h1>
-                <button class="btn-add" id="openAddNotice"><i class="fas fa-plus"></i> New Notice</button>
+                <h1>Avisos</h1>
+                <button class="btn-add" id="openAddNotice"><i class="fas fa-plus"></i> Novo Aviso</button>
             </div>
             <div class="modal" id="noticeModal">
                 <div class="modal-box">
-                    <h3>New Notice</h3>
-                    <input class="field" id="nTitle" placeholder="Title" />
-                    <textarea class="field" id="nContent" placeholder="Notice content..." rows="4"></textarea>
+                    <h3>Novo Aviso</h3>
+                    <input class="field" id="nTitle" placeholder="Título" />
+                    <textarea class="field" id="nContent" placeholder="Conteúdo do aviso..." rows="4"></textarea>
                     <div class="modal-actions">
-                        <button class="btn-cancel" id="closeNoticeModal">Cancel</button>
-                        <button class="btn-save"   id="saveNotice">Publish</button>
+                        <button class="btn-cancel" id="closeNoticeModal">Cancelar</button>
+                        <button class="btn-save"   id="saveNotice">Publicar</button>
                     </div>
                 </div>
             </div>
             <div class="notices-list" id="noticesList"></div>
         </section>
 
-        <!-- SCHEDULE -->
+        <!-- HORÁRIOS -->
         <section class="view" id="view-schedule">
-            <div class="view-header"><span class="breadcrumb">$ takstud --schedule</span><h1>Schedule</h1></div>
+            <div class="view-header"><span class="breadcrumb">$ takstud --schedule</span><h1>Horários</h1></div>
             <div class="schedule-grid" id="scheduleGrid"></div>
         </section>
 

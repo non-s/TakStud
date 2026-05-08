@@ -1,34 +1,34 @@
-# TakStud — Educational Management SPA
+# TakStud — SPA de Gestão Educacional
 
-Live demo: https://non-s.github.io/TakStud
+Demo online: https://non-s.github.io/TakStud
 
-Stack: GitHub Pages (front-end) + Supabase (PostgreSQL, Auth, Realtime)
+Tecnologias: GitHub Pages (front-end) + Supabase (PostgreSQL, Auth, Realtime)
 
 ---
 
-## Setup in 5 Steps
+## Configuração em 5 Passos
 
-### 1. Create a Supabase project
+### 1. Crie um projeto no Supabase
 
-Go to [supabase.com](https://supabase.com), create a free account and a new project. Save the **Project URL** and the **anon public key** (Settings → API).
+Acesse [supabase.com](https://supabase.com), crie uma conta gratuita e um novo projeto. Salve a **URL do projeto** e a **chave pública anon** (Configurações → API).
 
-### 2. Configure credentials
+### 2. Configure as credenciais
 
-In `script.js`, replace:
+Em `script.js`, substitua:
 
 ```js
 const SUPABASE_URL      = 'https://xxxxxxxxxxxx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 ```
 
-The anon key is public by design — Row Level Security protects data on the server side.
+A chave anon é pública por design — o Row Level Security protege os dados no lado do servidor.
 
-### 3. Run the SQL schema
+### 3. Execute o esquema SQL
 
-In the Supabase Dashboard → SQL Editor, run the block below:
+No Supabase Dashboard → SQL Editor, execute o bloco abaixo:
 
 ```sql
--- ── Tables ───────────────────────────────────────────────────────────────
+-- ── Tabelas ───────────────────────────────────────────────────────────────
 
 CREATE TABLE schools (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,7 +81,7 @@ ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notices  ENABLE ROW LEVEL SECURITY;
 
--- Helper functions (SECURITY DEFINER = run as postgres, bypass RLS)
+-- Funções auxiliares (SECURITY DEFINER = executa como postgres, ignora RLS)
 CREATE OR REPLACE FUNCTION my_school_id()
 RETURNS UUID LANGUAGE SQL STABLE SECURITY DEFINER AS $$
     SELECT school_id FROM profiles WHERE id = auth.uid();
@@ -92,14 +92,14 @@ RETURNS TEXT LANGUAGE SQL STABLE SECURITY DEFINER AS $$
     SELECT role FROM profiles WHERE id = auth.uid();
 $$;
 
--- Profiles: each user can only read and update their own profile
+-- Perfis: cada usuário só pode ler e atualizar o próprio perfil
 CREATE POLICY "own profile read"   ON profiles FOR SELECT USING (id = auth.uid());
 CREATE POLICY "own profile update" ON profiles FOR UPDATE USING (id = auth.uid());
 
--- Schools: school members can only see their own school
+-- Escolas: membros só enxergam a própria escola
 CREATE POLICY "school read" ON schools FOR SELECT USING (id = my_school_id());
 
--- Students
+-- Alunos
 CREATE POLICY "students read"   ON students FOR SELECT
     USING (school_id = my_school_id());
 CREATE POLICY "students insert" ON students FOR INSERT
@@ -109,7 +109,7 @@ CREATE POLICY "students update" ON students FOR UPDATE
 CREATE POLICY "students delete" ON students FOR DELETE
     USING (school_id = my_school_id() AND my_role() IN ('teacher','admin'));
 
--- Tasks
+-- Tarefas
 CREATE POLICY "tasks read"   ON tasks FOR SELECT
     USING (school_id = my_school_id());
 CREATE POLICY "tasks insert" ON tasks FOR INSERT
@@ -119,7 +119,7 @@ CREATE POLICY "tasks update" ON tasks FOR UPDATE
 CREATE POLICY "tasks delete" ON tasks FOR DELETE
     USING (school_id = my_school_id() AND my_role() IN ('teacher','admin'));
 
--- Notices
+-- Avisos
 CREATE POLICY "notices read"   ON notices FOR SELECT
     USING (school_id = my_school_id());
 CREATE POLICY "notices insert" ON notices FOR INSERT
@@ -127,7 +127,7 @@ CREATE POLICY "notices insert" ON notices FOR INSERT
 CREATE POLICY "notices delete" ON notices FOR DELETE
     USING (school_id = my_school_id() AND my_role() IN ('teacher','admin'));
 
--- ── RPC: creates school + profile in a single atomic transaction ──────────
+-- ── RPC: cria escola + perfil em uma única transação atômica ──────────────
 
 CREATE OR REPLACE FUNCTION create_school_and_profile(
     p_user_id    UUID,
@@ -146,14 +146,14 @@ END;
 $$;
 ```
 
-### 4. (Recommended) Disable email confirmation for testing
+### 4. (Recomendado) Desabilitar confirmação de e-mail para testes
 
-Authentication → Settings → uncheck "Enable email confirmations".  
-In production, keep it enabled and configure a custom email domain.
+Authentication → Settings → desmarque "Enable email confirmations".  
+Em produção, mantenha habilitado e configure um domínio de e-mail personalizado.
 
-### 5. Configure the redirect URL
+### 5. Configure a URL de redirecionamento
 
-Authentication → URL Configuration → add your GitHub Pages URL:
+Authentication → URL Configuration → adicione a URL do seu GitHub Pages:
 
 ```
 https://non-s.github.io/TakStud
@@ -161,27 +161,27 @@ https://non-s.github.io/TakStud
 
 ---
 
-## Architecture
+## Arquitetura
 
-### Why Supabase + GitHub Pages?
+### Por que Supabase + GitHub Pages?
 
-The front-end is static (plain HTML/CSS/JS) — no Node server, no PHP, no runtime needed. Supabase exposes PostgreSQL over REST and WebSocket. The result is a stack with no application server: GitHub Pages serves the files, Supabase handles data and authentication.
+O front-end é estático (HTML/CSS/JS puro) — sem servidor Node, sem PHP, sem runtime necessário. O Supabase expõe o PostgreSQL via REST e WebSocket. O resultado é uma stack sem servidor de aplicação: o GitHub Pages serve os arquivos e o Supabase cuida dos dados e da autenticação.
 
-### Row Level Security — the real difference
+### Row Level Security — a diferença real
 
-In a localStorage-only approach, RBAC is cosmetic: anyone can open DevTools and swap their role. With RLS, policies live in the database:
+Em uma abordagem somente com localStorage, o RBAC é cosmético: qualquer pessoa pode abrir o DevTools e trocar sua role. Com RLS, as políticas ficam no banco de dados:
 
 ```sql
--- A student tries to delete a student record: the database rejects it at the data layer
+-- Um aluno tenta excluir um registro de aluno: o banco rejeita na camada de dados
 CREATE POLICY "students delete" ON students FOR DELETE
     USING (school_id = my_school_id() AND my_role() IN ('teacher','admin'));
 ```
 
-The front-end doesn't need to trust itself. Even if someone tampers with the JS in the browser, the server returns a 403.
+O front-end não precisa confiar em si mesmo. Mesmo que alguém altere o JS no navegador, o servidor retorna 403.
 
 ### Multi-tenancy via school_id
 
-Every record (student, task, notice) carries a `school_id`. RLS policies filter by `my_school_id()`, which returns the authenticated user's school. Multiple schools share the same Supabase instance without ever seeing each other's data.
+Cada registro (aluno, tarefa, aviso) carrega um `school_id`. As políticas de RLS filtram por `my_school_id()`, que retorna a escola do usuário autenticado. Múltiplas escolas compartilham a mesma instância do Supabase sem jamais ver os dados umas das outras.
 
 ### Realtime
 
@@ -192,11 +192,11 @@ sb.channel('db-changes')
     .subscribe();
 ```
 
-When a teacher adds a student, all other teachers in the same school see the update without reloading the page. Supabase Realtime uses PostgreSQL LISTEN/NOTIFY under the hood.
+Quando um professor adiciona um aluno, todos os outros professores da mesma escola veem a atualização sem recarregar a página. O Supabase Realtime usa PostgreSQL LISTEN/NOTIFY internamente.
 
-### XSS prevention
+### Prevenção de XSS
 
-Every external string written to `innerHTML` goes through `esc()`:
+Toda string externa escrita em `innerHTML` passa pela função `esc()`:
 
 ```js
 const esc = s => String(s ?? '')
@@ -206,14 +206,14 @@ const esc = s => String(s ?? '')
 
 ---
 
-## Files
+## Arquivos
 
 ```
 TakStud/
-├── index.html   — markup, auth overlay, modals
-├── style.css    — dark theme, auth card, toast, responsive
-├── script.js    — Supabase client, auth, async CRUD, realtime, RBAC
-└── README.md    — this file: SQL schema + setup guide
+├── index.html   — marcação, overlay de autenticação, modais
+├── style.css    — tema escuro, card de auth, toast, responsivo
+├── script.js    — cliente Supabase, auth, CRUD assíncrono, realtime, RBAC
+└── README.md    — este arquivo: esquema SQL + guia de configuração
 ```
 
-No build step. No bundler. No framework.
+Sem etapa de build. Sem bundler. Sem framework.
