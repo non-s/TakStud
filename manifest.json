@@ -1,0 +1,12 @@
+{
+  "name": "TakStud — Gestão Educacional",
+  "short_name": "TakStud",
+  "description": "Sistema de gestão educacional com autenticação e RBAC via Supabase",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#f0883e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
