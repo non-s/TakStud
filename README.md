@@ -6,29 +6,29 @@ Stack: GitHub Pages (front-end) + Supabase (PostgreSQL, Auth, Realtime)
 
 ---
 
-## Setup em 5 passos
+## Setup in 5 Steps
 
-### 1. Crie um projeto no Supabase
+### 1. Create a Supabase project
 
-Acesse [supabase.com](https://supabase.com), crie uma conta gratuita e um novo projeto. Guarde a **Project URL** e a **anon public key** (Settings → API).
+Go to [supabase.com](https://supabase.com), create a free account and a new project. Save the **Project URL** and the **anon public key** (Settings → API).
 
-### 2. Configure as credenciais
+### 2. Configure credentials
 
-Em `script.js`, substitua:
+In `script.js`, replace:
 
 ```js
 const SUPABASE_URL      = 'https://xxxxxxxxxxxx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 ```
 
-A anon key é pública por design — o Row Level Security protege os dados no servidor.
+The anon key is public by design — Row Level Security protects data on the server side.
 
-### 3. Execute o schema SQL
+### 3. Run the SQL schema
 
-No Supabase Dashboard → SQL Editor, execute o bloco abaixo:
+In the Supabase Dashboard → SQL Editor, run the block below:
 
 ```sql
--- ── Tabelas ──────────────────────────────────────────────────────────────
+-- ── Tables ───────────────────────────────────────────────────────────────
 
 CREATE TABLE schools (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,7 +81,7 @@ ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notices  ENABLE ROW LEVEL SECURITY;
 
--- Funções auxiliares (SECURITY DEFINER = rodam como postgres, passam pelo RLS)
+-- Helper functions (SECURITY DEFINER = run as postgres, bypass RLS)
 CREATE OR REPLACE FUNCTION my_school_id()
 RETURNS UUID LANGUAGE SQL STABLE SECURITY DEFINER AS $$
     SELECT school_id FROM profiles WHERE id = auth.uid();
@@ -92,11 +92,11 @@ RETURNS TEXT LANGUAGE SQL STABLE SECURITY DEFINER AS $$
     SELECT role FROM profiles WHERE id = auth.uid();
 $$;
 
--- Profiles: cada usuário vê e edita só o próprio perfil
+-- Profiles: each user can only read and update their own profile
 CREATE POLICY "own profile read"   ON profiles FOR SELECT USING (id = auth.uid());
 CREATE POLICY "own profile update" ON profiles FOR UPDATE USING (id = auth.uid());
 
--- Schools: membros da escola veem a própria escola
+-- Schools: school members can only see their own school
 CREATE POLICY "school read" ON schools FOR SELECT USING (id = my_school_id());
 
 -- Students
@@ -127,7 +127,7 @@ CREATE POLICY "notices insert" ON notices FOR INSERT
 CREATE POLICY "notices delete" ON notices FOR DELETE
     USING (school_id = my_school_id() AND my_role() IN ('teacher','admin'));
 
--- ── RPC: cria escola + perfil em uma transação atômica ───────────────────
+-- ── RPC: creates school + profile in a single atomic transaction ──────────
 
 CREATE OR REPLACE FUNCTION create_school_and_profile(
     p_user_id    UUID,
@@ -146,14 +146,14 @@ END;
 $$;
 ```
 
-### 4. (Recomendado) Desative confirmação de e-mail para testes
+### 4. (Recommended) Disable email confirmation for testing
 
-Authentication → Settings → desmarque "Enable email confirmations".  
-Em produção real, mantenha ativo e configure um domínio de e-mail.
+Authentication → Settings → uncheck "Enable email confirmations".  
+In production, keep it enabled and configure a custom email domain.
 
-### 5. Configure o redirect URL
+### 5. Configure the redirect URL
 
-Authentication → URL Configuration → adicione sua URL do GitHub Pages:
+Authentication → URL Configuration → add your GitHub Pages URL:
 
 ```
 https://non-s.github.io/TakStud
@@ -161,29 +161,29 @@ https://non-s.github.io/TakStud
 
 ---
 
-## Arquitetura
+## Architecture
 
-### Por que Supabase + GitHub Pages?
+### Why Supabase + GitHub Pages?
 
-O front-end é estático (HTML/CSS/JS puro) — não precisa de servidor Node, PHP ou qualquer runtime. O Supabase expõe o PostgreSQL via REST e WebSocket. O resultado é uma stack sem servidor de aplicação: GitHub Pages serve os arquivos, Supabase cuida dos dados e da autenticação.
+The front-end is static (plain HTML/CSS/JS) — no Node server, no PHP, no runtime needed. Supabase exposes PostgreSQL over REST and WebSocket. The result is a stack with no application server: GitHub Pages serves the files, Supabase handles data and authentication.
 
-### Row Level Security — a diferença real
+### Row Level Security — the real difference
 
-No modo anterior (localStorage), o RBAC era cosmético: qualquer pessoa abria o DevTools e trocava de role. Com RLS, as políticas vivem no banco:
+In a localStorage-only approach, RBAC is cosmetic: anyone can open DevTools and swap their role. With RLS, policies live in the database:
 
 ```sql
--- Aluno tenta deletar um aluno: o banco rejeita na camada de dados
+-- A student tries to delete a student record: the database rejects it at the data layer
 CREATE POLICY "students delete" ON students FOR DELETE
     USING (school_id = my_school_id() AND my_role() IN ('teacher','admin'));
 ```
 
-O front-end não precisa confiar em si mesmo. Mesmo que alguém manipule o JS no browser, o servidor retorna erro 403.
+The front-end doesn't need to trust itself. Even if someone tampers with the JS in the browser, the server returns a 403.
 
 ### Multi-tenancy via school_id
 
-Cada registro (aluno, tarefa, comunicado) carrega `school_id`. As políticas de RLS filtram por `my_school_id()`, que retorna o school_id do usuário autenticado. Múltiplas escolas usam a mesma instância Supabase sem ver dados umas das outras.
+Every record (student, task, notice) carries a `school_id`. RLS policies filter by `my_school_id()`, which returns the authenticated user's school. Multiple schools share the same Supabase instance without ever seeing each other's data.
 
-### Real-time
+### Realtime
 
 ```js
 sb.channel('db-changes')
@@ -192,11 +192,11 @@ sb.channel('db-changes')
     .subscribe();
 ```
 
-Quando um professor adiciona um aluno, todos os outros professores da mesma escola veem a atualização sem recarregar a página. O Supabase Realtime usa PostgreSQL LISTEN/NOTIFY por baixo.
+When a teacher adds a student, all other teachers in the same school see the update without reloading the page. Supabase Realtime uses PostgreSQL LISTEN/NOTIFY under the hood.
 
-### XSS eliminado
+### XSS prevention
 
-Toda string de origem externa que vai para `innerHTML` passa por `esc()`:
+Every external string written to `innerHTML` goes through `esc()`:
 
 ```js
 const esc = s => String(s ?? '')
@@ -206,14 +206,14 @@ const esc = s => String(s ?? '')
 
 ---
 
-## Arquivos
+## Files
 
 ```
 TakStud/
-├── index.html   — markup, auth overlay, modais
-├── style.css    — dark theme, auth card, toast, responsivo
-├── script.js    — Supabase client, auth, CRUD async, real-time, RBAC
-└── README.md    — este arquivo: SQL schema + guia de setup
+├── index.html   — markup, auth overlay, modals
+├── style.css    — dark theme, auth card, toast, responsive
+├── script.js    — Supabase client, auth, async CRUD, realtime, RBAC
+└── README.md    — this file: SQL schema + setup guide
 ```
 
-Nenhum build step. Nenhum bundler. Nenhum framework.
+No build step. No bundler. No framework.
