@@ -367,15 +367,91 @@ async function renderNotices() {
         : '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>Nenhum aviso.</p></div>';
 }
 
-function renderSchedule() {
-    const days = ['Segunda','Terça','Quarta','Quinta','Sexta'], keys = ['mon','tue','wed','thu','fri'];
+async function renderSchedule() {
+    const canEdit = state.profile?.role === 'admin';
+    const grid = document.getElementById('scheduleGrid');
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#8b949e">Carregando...</div>';
+
+    const { data: rows } = await sb.from('schedules')
+        .select('*')
+        .eq('school_id', state.profile.school_id)
+        .order('sort_order').order('time_slot');
+
+    const schedule = rows?.length ? rows : SCHEDULE.map((r, i) => ({
+        id: null, time_slot: r.time, mon: r.mon, tue: r.tue,
+        wed: r.wed, thu: r.thu, fri: r.fri, sort_order: i,
+    }));
+
+    const days = ['Segunda','Terça','Quarta','Quinta','Sexta'];
+    const keys = ['mon','tue','wed','thu','fri'];
+
     let html = '<div class="sch-header">Hora</div>';
     days.forEach(d => html += `<div class="sch-header">${d}</div>`);
-    SCHEDULE.forEach(row => {
-        html += `<div class="sch-time">${row.time}</div>`;
-        keys.forEach(k => html += `<div class="sch-cell"><span class="sch-subject">${row[k]}</span></div>`);
+
+    schedule.forEach(row => {
+        html += `<div class="sch-time">${esc(row.time_slot)}${canEdit && row.id ? `<button class="sch-del-btn" data-id="${row.id}" title="Remover linha" style="margin-left:.4rem;background:none;border:none;color:#f85149;cursor:pointer;font-size:.75rem">✕</button>` : ''}</div>`;
+        keys.forEach(k => html += `<div class="sch-cell"><span class="sch-subject">${esc(row[k] || '')}</span></div>`);
     });
-    document.getElementById('scheduleGrid').innerHTML = html;
+
+    grid.innerHTML = html;
+
+    if (canEdit) {
+        const addRow = document.createElement('div');
+        addRow.style.cssText = 'grid-column:1/-1;padding:.5rem;display:flex;justify-content:flex-end';
+        addRow.innerHTML = `<button id="btnAddScheduleRow" class="btn-add" style="font-size:.82rem"><i class="fas fa-plus"></i> Adicionar Horário</button>`;
+        grid.after(addRow);
+        document.getElementById('btnAddScheduleRow')?.addEventListener('click', () => openScheduleModal(null, schedule.length));
+
+        grid.querySelectorAll('.sch-del-btn').forEach(btn =>
+            btn.addEventListener('click', () => deleteScheduleRow(btn.dataset.id)));
+    }
+}
+
+async function deleteScheduleRow(id) {
+    if (!confirm('Remover este horário?')) return;
+    await sb.from('schedules').delete().eq('id', id);
+    renderSchedule();
+    toast('Horário removido.', 'warn');
+}
+
+function openScheduleModal(existing = null, order = 0) {
+    const m = document.getElementById('scheduleModal');
+    document.getElementById('schTime').value   = existing?.time_slot || '';
+    document.getElementById('schMon').value    = existing?.mon || '';
+    document.getElementById('schTue').value    = existing?.tue || '';
+    document.getElementById('schWed').value    = existing?.wed || '';
+    document.getElementById('schThu').value    = existing?.thu || '';
+    document.getElementById('schFri').value    = existing?.fri || '';
+    document.getElementById('scheduleModal').dataset.editId    = existing?.id || '';
+    document.getElementById('scheduleModal').dataset.sortOrder = order;
+    m.classList.add('open');
+}
+
+async function saveScheduleRow() {
+    const editId    = document.getElementById('scheduleModal').dataset.editId;
+    const sortOrder = Number(document.getElementById('scheduleModal').dataset.sortOrder);
+    const time_slot = document.getElementById('schTime').value.trim();
+    if (!time_slot) return toast('Horário é obrigatório.', 'error');
+
+    const payload = {
+        time_slot,
+        mon: document.getElementById('schMon').value.trim(),
+        tue: document.getElementById('schTue').value.trim(),
+        wed: document.getElementById('schWed').value.trim(),
+        thu: document.getElementById('schThu').value.trim(),
+        fri: document.getElementById('schFri').value.trim(),
+        school_id:  state.profile.school_id,
+        sort_order: sortOrder,
+    };
+
+    if (editId) {
+        await sb.from('schedules').update(payload).eq('id', editId);
+    } else {
+        await sb.from('schedules').insert(payload);
+    }
+    closeModal('scheduleModal');
+    renderSchedule();
+    toast('Horário salvo.');
 }
 
 /* ─── Modais ─────────────────────────────────────────────────────────────── */
@@ -588,6 +664,10 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Clique no backdrop fecha qualquer modal */
     document.querySelectorAll('.modal').forEach(m =>
         m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+    /* Modal de horário */
+    document.getElementById('closeScheduleModal')?.addEventListener('click', () => closeModal('scheduleModal'));
+    document.getElementById('saveScheduleRow')?.addEventListener('click', saveScheduleRow);
 
     /* Atalhos de teclado */
     document.addEventListener('keydown', e => {

@@ -209,6 +209,23 @@
     </main>
 </div>
 
+<!-- MODAL: Adicionar / Editar Horário -->
+<div class="modal" id="scheduleModal">
+    <div class="modal-box">
+        <h3>Horário</h3>
+        <input class="field" id="schTime"  placeholder="Horário (ex: 07:00)" />
+        <input class="field" id="schMon"   placeholder="Segunda" />
+        <input class="field" id="schTue"   placeholder="Terça" />
+        <input class="field" id="schWed"   placeholder="Quarta" />
+        <input class="field" id="schThu"   placeholder="Quinta" />
+        <input class="field" id="schFri"   placeholder="Sexta" />
+        <div class="modal-actions">
+            <button class="btn-cancel" id="closeScheduleModal">Cancelar</button>
+            <button class="btn-save"   id="saveScheduleRow">Salvar</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});</script>
