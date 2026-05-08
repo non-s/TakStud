@@ -1,7 +1,7 @@
 /* ─── Supabase config ───────────────────────────────────────────────────────
- * Substitua os dois valores abaixo com os da sua conta Supabase.
- * Settings > API > Project URL  e  anon public key.
- * A anon key é pública por design — o RLS protege os dados no servidor.
+ * Replace the two values below with those from your Supabase account.
+ * Settings > API > Project URL  and  anon public key.
+ * The anon key is public by design — RLS protects data on the server.
  * ─────────────────────────────────────────────────────────────────────────── */
 const SUPABASE_URL      = 'https://bvquyfzllqnbfxncsacn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2cXV5ZnpsbHFuYmZ4bmNzYWNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxODU1MzQsImV4cCI6MjA5Mzc2MTUzNH0.xa_rs4bVLoTv58P7U8rDOaPjo1Dqt60q8cR-IWFpbug';
@@ -25,11 +25,11 @@ const state = {
 
 /* ─── Grade horária (dado estático, sem necessidade de banco) ────────────── */
 const SCHEDULE = [
-    { time:'07:00', mon:'Matemática', tue:'Português',  wed:'História',   thu:'Ciências',   fri:'Ed. Física' },
-    { time:'08:00', mon:'Português',  tue:'Matemática', wed:'Ciências',   thu:'Matemática', fri:'Artes'      },
-    { time:'09:00', mon:'História',   tue:'Ciências',   wed:'Matemática', thu:'Português',  fri:'Inglês'     },
-    { time:'10:30', mon:'Ciências',   tue:'História',   wed:'Inglês',     thu:'História',   fri:'Matemática' },
-    { time:'11:30', mon:'Inglês',     tue:'Ed. Física', wed:'Português',  thu:'Artes',      fri:'Português'  },
+    { time:'07:00', mon:'Math',       tue:'Portuguese',  wed:'History',    thu:'Science',    fri:'P.E.'       },
+    { time:'08:00', mon:'Portuguese', tue:'Math',        wed:'Science',    thu:'Math',       fri:'Arts'       },
+    { time:'09:00', mon:'History',    tue:'Science',     wed:'Math',       thu:'Portuguese', fri:'English'    },
+    { time:'10:30', mon:'Science',    tue:'History',     wed:'English',    thu:'History',    fri:'Math'       },
+    { time:'11:30', mon:'English',    tue:'P.E.',        wed:'Portuguese', thu:'Arts',       fri:'Portuguese' },
 ];
 
 /* ─── Utilitários ────────────────────────────────────────────────────────── */
@@ -71,16 +71,16 @@ function showRegisterSection() {
 async function login() {
     const email    = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
-    if (!email || !password) return setAuthErr('Preencha e-mail e senha.');
+    if (!email || !password) return setAuthErr('Please fill in email and password.');
     setAuthErr('');
     const btn = document.getElementById('btnLogin');
     btn.disabled = true;
-    btn.textContent = 'Entrando...';
+    btn.textContent = 'Signing in...';
     const { error } = await sb.auth.signInWithPassword({ email, password });
     btn.disabled    = false;
-    btn.textContent = 'Entrar';
+    btn.textContent = 'Sign In';
     if (error) setAuthErr(error.message === 'Invalid login credentials'
-        ? 'E-mail ou senha incorretos.' : error.message);
+        ? 'Incorrect email or password.' : error.message);
 }
 
 async function register() {
@@ -88,16 +88,16 @@ async function register() {
     const school   = document.getElementById('regSchool').value.trim();
     const email    = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
-    if (!name || !school || !email || !password) return setAuthErr('Preencha todos os campos.');
-    if (password.length < 6) return setAuthErr('Senha deve ter pelo menos 6 caracteres.');
+    if (!name || !school || !email || !password) return setAuthErr('Please fill in all fields.');
+    if (password.length < 6) return setAuthErr('Password must be at least 6 characters.');
     setAuthErr('');
     const btn = document.getElementById('btnRegister');
     btn.disabled = true;
-    btn.textContent = 'Criando conta...';
+    btn.textContent = 'Creating account...';
 
     const { data, error } = await sb.auth.signUp({ email, password });
     if (error) {
-        btn.disabled = false; btn.textContent = 'Criar conta';
+        btn.disabled = false; btn.textContent = 'Create account';
         return setAuthErr(error.message);
     }
 
@@ -108,9 +108,9 @@ async function register() {
         p_school_name: school,
     });
 
-    btn.disabled = false; btn.textContent = 'Criar conta';
-    if (rpcErr) return setAuthErr('Conta criada mas perfil falhou. Tente o login.');
-    setAuthErr('Conta criada! Verifique seu e-mail e faça login.');
+    btn.disabled = false; btn.textContent = 'Create account';
+    if (rpcErr) return setAuthErr('Account created but profile failed. Try signing in.');
+    setAuthErr('Account created! Check your email and sign in.');
     showLoginSection();
 }
 
@@ -135,7 +135,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
 
     if (error || !profile) {
         await sb.auth.signOut();
-        setAuthErr('Perfil não encontrado. Confirme seu e-mail ou entre em contato.');
+        setAuthErr('Profile not found. Confirm your email or contact support.');
         authOverlay().style.display = 'flex';
         return;
     }
@@ -143,7 +143,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     state.profile = profile;
     document.getElementById('currentRole').textContent      = profile.full_name;
     document.getElementById('currentRoleBadge').textContent =
-        { teacher: 'Professor', student: 'Aluno', admin: 'Admin' }[profile.role] ?? profile.role;
+        { teacher: 'Teacher', student: 'Student', admin: 'Admin' }[profile.role] ?? profile.role;
 
     authOverlay().style.display = 'none';
     applyRBAC();
@@ -201,7 +201,7 @@ function showView(view) {
 async function loadStudents() {
     const { data, error } = await sb.from('students')
         .select('*').eq('school_id', state.profile.school_id).order('name');
-    if (error) { toast('Erro ao carregar alunos.', 'error'); return []; }
+    if (error) { toast('Error loading students.', 'error'); return []; }
     return data;
 }
 
@@ -209,7 +209,7 @@ async function loadTasks() {
     const { data, error } = await sb.from('tasks')
         .select('*').eq('school_id', state.profile.school_id)
         .order('created_at', { ascending: false });
-    if (error) { toast('Erro ao carregar tarefas.', 'error'); return []; }
+    if (error) { toast('Error loading tasks.', 'error'); return []; }
     return data;
 }
 
@@ -217,7 +217,7 @@ async function loadNotices() {
     const { data, error } = await sb.from('notices')
         .select('*').eq('school_id', state.profile.school_id)
         .order('created_at', { ascending: false });
-    if (error) { toast('Erro ao carregar comunicados.', 'error'); return []; }
+    if (error) { toast('Error loading notices.', 'error'); return []; }
     return data;
 }
 
@@ -231,11 +231,11 @@ async function renderDashboard() {
     document.getElementById('dashPendingTasks').innerHTML =
         tasks.filter(t => !t.done).slice(0, 5)
              .map(t => `<li><i class="fas fa-circle"></i>${esc(t.title)}</li>`).join('')
-        || '<li class="empty">Nenhuma tarefa pendente.</li>';
+        || '<li class="empty">No pending tasks.</li>';
     document.getElementById('dashNotices').innerHTML =
         notices.slice(0, 3)
                .map(n => `<li><i class="fas fa-circle"></i>${esc(n.title)}</li>`).join('')
-        || '<li class="empty">Nenhum comunicado.</li>';
+        || '<li class="empty">No notices.</li>';
 }
 
 async function renderStudents() {
@@ -251,12 +251,12 @@ async function renderStudents() {
             <td>${esc(s.email || '—')}</td>
             <td>${canWrite
                 ? `<div class="td-actions">
-                     <button class="btn-icon-sm edit" data-action="edit-student" data-id="${s.id}" title="Editar"><i class="fas fa-edit"></i></button>
-                     <button class="btn-icon-sm"      data-action="del-student"  data-id="${s.id}" title="Excluir"><i class="fas fa-trash"></i></button>
+                     <button class="btn-icon-sm edit" data-action="edit-student" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                     <button class="btn-icon-sm"      data-action="del-student"  data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
                    </div>`
                 : '—'}</td>
           </tr>`).join('')
-        : `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-users"></i><p>Nenhum aluno encontrado.</p></div></td></tr>`;
+        : `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-users"></i><p>No students found.</p></div></td></tr>`;
 }
 
 async function renderTasks() {
@@ -280,7 +280,7 @@ async function renderTasks() {
             </div>
             ${canWrite ? `<button class="task-del" data-action="del-task" data-id="${t.id}"><i class="fas fa-times"></i></button>` : ''}
           </div>`).join('')
-        : '<div class="empty-state"><i class="fas fa-tasks"></i><p>Nenhuma tarefa.</p></div>';
+        : '<div class="empty-state"><i class="fas fa-tasks"></i><p>No tasks.</p></div>';
 }
 
 async function renderNotices() {
@@ -297,11 +297,11 @@ async function renderNotices() {
             </div>
             <div class="notice-content">${esc(n.content)}</div>
           </div>`).join('')
-        : '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>Nenhum comunicado.</p></div>';
+        : '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No notices.</p></div>';
 }
 
 function renderSchedule() {
-    const days = ['Segunda','Terça','Quarta','Quinta','Sexta'], keys = ['mon','tue','wed','thu','fri'];
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'], keys = ['mon','tue','wed','thu','fri'];
     let html = '<div class="sch-header">Hora</div>';
     days.forEach(d => html += `<div class="sch-header">${d}</div>`);
     SCHEDULE.forEach(row => {
@@ -323,7 +323,7 @@ async function openEditStudent(id) {
     document.getElementById('sName').value  = s.name;
     document.getElementById('sClass').value = s.cls;
     document.getElementById('sEmail').value = s.email || '';
-    document.getElementById('studentModalTitle').textContent = 'Editar Aluno';
+    document.getElementById('studentModalTitle').textContent = 'Edit Student';
     openModal('studentModal');
 }
 
@@ -332,19 +332,19 @@ async function saveStudent() {
     const name  = document.getElementById('sName').value.trim();
     const cls   = document.getElementById('sClass').value.trim();
     const email = document.getElementById('sEmail').value.trim();
-    if (!name) return toast('Nome é obrigatório.', 'error');
-    if (!cls)  return toast('Turma é obrigatória.', 'error');
+    if (!name) return toast('Name is required.', 'error');
+    if (!cls)  return toast('Class is required.', 'error');
 
     if (state.editingStudentId) {
         const { error } = await sb.from('students')
             .update({ name, cls, email }).eq('id', state.editingStudentId);
-        if (error) return toast('Erro ao atualizar: ' + error.message, 'error');
-        toast('Aluno atualizado.');
+        if (error) return toast('Error updating: ' + error.message, 'error');
+        toast('Student updated.');
     } else {
         const { error } = await sb.from('students')
             .insert({ name, cls, email, school_id: state.profile.school_id });
-        if (error) return toast('Erro ao salvar: ' + error.message, 'error');
-        toast('Aluno adicionado.');
+        if (error) return toast('Error saving: ' + error.message, 'error');
+        toast('Student added.');
     }
     closeModal('studentModal');
     renderStudents();
@@ -352,18 +352,18 @@ async function saveStudent() {
 }
 
 async function deleteStudent(id) {
-    if (!confirm('Excluir este aluno?')) return;
+    if (!confirm('Delete this student?')) return;
     const { error } = await sb.from('students').delete().eq('id', id);
-    if (error) return toast('Erro ao excluir.', 'error');
+    if (error) return toast('Error deleting.', 'error');
     renderStudents();
     renderDashboard();
-    toast('Aluno removido.', 'warn');
+    toast('Student removed.', 'warn');
 }
 
 async function saveTask() {
     const title   = document.getElementById('tTitle').value.trim();
     const subject = document.getElementById('tSubject').value.trim();
-    if (!title) return toast('Título é obrigatório.', 'error');
+    if (!title) return toast('Title is required.', 'error');
     const { error } = await sb.from('tasks').insert({
         title, subject,
         due_date:    document.getElementById('tDue').value || null,
@@ -371,12 +371,12 @@ async function saveTask() {
         done:        false,
         school_id:   state.profile.school_id,
     });
-    if (error) return toast('Erro ao salvar tarefa.', 'error');
+    if (error) return toast('Error saving task.', 'error');
     ['tTitle','tSubject','tDue','tDesc'].forEach(id => document.getElementById(id).value = '');
     closeModal('taskModal');
     renderTasks();
     renderDashboard();
-    toast('Tarefa adicionada.');
+    toast('Task added.');
 }
 
 async function toggleTask(id) {
@@ -391,30 +391,30 @@ async function deleteTask(id) {
     await sb.from('tasks').delete().eq('id', id);
     renderTasks();
     renderDashboard();
-    toast('Tarefa removida.', 'warn');
+    toast('Task removed.', 'warn');
 }
 
 async function saveNotice() {
     const title   = document.getElementById('nTitle').value.trim();
     const content = document.getElementById('nContent').value.trim();
-    if (!title)   return toast('Título é obrigatório.', 'error');
-    if (!content) return toast('Conteúdo é obrigatório.', 'error');
+    if (!title)   return toast('Title is required.', 'error');
+    if (!content) return toast('Content is required.', 'error');
     const { error } = await sb.from('notices').insert({
         title, content, school_id: state.profile.school_id,
     });
-    if (error) return toast('Erro ao publicar.', 'error');
+    if (error) return toast('Error publishing.', 'error');
     ['nTitle','nContent'].forEach(id => document.getElementById(id).value = '');
     closeModal('noticeModal');
     renderNotices();
     renderDashboard();
-    toast('Comunicado publicado.');
+    toast('Notice published.');
 }
 
 async function deleteNotice(id) {
     await sb.from('notices').delete().eq('id', id);
     renderNotices();
     renderDashboard();
-    toast('Comunicado removido.', 'warn');
+    toast('Notice removed.', 'warn');
 }
 
 /* ─── Export JSON (só admin) ────────────────────────────────────────────── */
@@ -427,7 +427,7 @@ async function exportData() {
     a.download = `takstud-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast('Dados exportados.');
+    toast('Data exported.');
 }
 
 /* ─── Init ───────────────────────────────────────────────────────────────── */
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportBtn = document.createElement('button');
     exportBtn.id        = 'exportBtn';
     exportBtn.className = 'btn-export';
-    exportBtn.innerHTML = '<i class="fas fa-download"></i> Exportar';
+    exportBtn.innerHTML = '<i class="fas fa-download"></i> Export';
     exportBtn.style.display = 'none';
     exportBtn.addEventListener('click', exportData);
     document.querySelector('.topbar-user').prepend(exportBtn);
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('openAddStudent').addEventListener('click', () => {
         state.editingStudentId = null;
         ['sName','sClass','sEmail'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('studentModalTitle').textContent = 'Adicionar Aluno';
+        document.getElementById('studentModalTitle').textContent = 'Add Student';
         openModal('studentModal');
     });
     document.getElementById('closeStudentModal').addEventListener('click', () => closeModal('studentModal'));
