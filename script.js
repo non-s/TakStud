@@ -8,7 +8,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ─── RBAC — espelhado no banco via Row Level Security ───────────────────── */
+/* ─── RBAC — mirrored in the database via Row Level Security ────────────── */
 const RBAC = {
     teacher: { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true,  canExport: false },
     student: { views: ['dashboard','tasks','notices'],                       canWrite: false, canExport: false },
@@ -23,7 +23,7 @@ const state = {
     editingStudentId: null,
 };
 
-/* ─── Grade horária (dado estático, sem necessidade de banco) ────────────── */
+/* ─── Schedule (static data, no database needed) ────────────────────────── */
 const SCHEDULE = [
     { time:'07:00', mon:'Math',       tue:'Portuguese',  wed:'History',    thu:'Science',    fri:'P.E.'       },
     { time:'08:00', mon:'Portuguese', tue:'Math',        wed:'Science',    thu:'Math',       fri:'Arts'       },
@@ -32,11 +32,11 @@ const SCHEDULE = [
     { time:'11:30', mon:'English',    tue:'P.E.',        wed:'Portuguese', thu:'Arts',       fri:'Portuguese' },
 ];
 
-/* ─── Utilitários ────────────────────────────────────────────────────────── */
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
 const formatDate  = d => { if (!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
 const debounce    = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-/* XSS: toda string do usuário que vai para innerHTML passa por aqui */
+/* XSS: every user string written to innerHTML goes through here */
 const esc = s => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -101,7 +101,7 @@ async function register() {
         return setAuthErr(error.message);
     }
 
-    /* Cria escola + perfil em uma transação via RPC para evitar estado parcial */
+    /* Creates school + profile in a single RPC transaction to avoid partial state */
     const { error: rpcErr } = await sb.rpc('create_school_and_profile', {
         p_user_id:   data.user.id,
         p_full_name: name,
@@ -151,7 +151,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     showView('dashboard');
 });
 
-/* ─── Real-time — Supabase Realtime publica mudanças do Postgres ─────────── */
+/* ─── Realtime — Supabase Realtime publishes Postgres changes ───────────── */
 let realtimeChannel = null;
 function subscribeToChanges() {
     if (realtimeChannel) sb.removeChannel(realtimeChannel);
@@ -184,7 +184,7 @@ function applyRBAC() {
     if (exportBtn) exportBtn.style.display = p.canExport ? '' : 'none';
 }
 
-/* ─── Navegação ──────────────────────────────────────────────────────────── */
+/* ─── Navigation ─────────────────────────────────────────────────────────── */
 function showView(view) {
     if (!state.profile) return;
     const p = RBAC[state.profile.role] ?? RBAC.student;
@@ -197,7 +197,7 @@ function showView(view) {
        notices: renderNotices, schedule: renderSchedule })[view]?.();
 }
 
-/* ─── Camada de dados (todo acesso vai ao Postgres via Supabase REST) ─────── */
+/* ─── Data layer (all access goes to Postgres via Supabase REST) ─────────── */
 async function loadStudents() {
     const { data, error } = await sb.from('students')
         .select('*').eq('school_id', state.profile.school_id).order('name');
@@ -327,7 +327,7 @@ async function openEditStudent(id) {
     openModal('studentModal');
 }
 
-/* ─── CRUD (escrita rejeitada pelo RLS se o role não autorizar) ───────────── */
+/* ─── CRUD (writes rejected by RLS if the role is not authorized) ─────────── */
 async function saveStudent() {
     const name  = document.getElementById('sName').value.trim();
     const cls   = document.getElementById('sClass').value.trim();
@@ -417,7 +417,7 @@ async function deleteNotice(id) {
     toast('Notice removed.', 'warn');
 }
 
-/* ─── Export JSON (só admin) ────────────────────────────────────────────── */
+/* ─── Export JSON (admin only) ──────────────────────────────────────────── */
 async function exportData() {
     const [students, tasks, notices] = await Promise.all([loadStudents(), loadTasks(), loadNotices()]);
     const payload = { students, tasks, notices, school_id: state.profile.school_id, exportedAt: new Date().toISOString() };
@@ -439,11 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnShowLogin').addEventListener('click', showLoginSection);
     document.getElementById('btnLogout').addEventListener('click', logout);
 
-    /* Enter no formulário de login */
+    /* Enter key in the login form */
     ['authEmail','authPassword'].forEach(id =>
         document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
 
-    /* Export button (injetado no topbar, visível só para admin) */
+    /* Export button (injected in topbar, visible to admin only) */
     const exportBtn = document.createElement('button');
     exportBtn.id        = 'exportBtn';
     exportBtn.className = 'btn-export';
