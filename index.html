@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TakStud — Gestão Educacional</title>
     <meta name="description" content="Sistema de gestão educacional para professores, alunos e administradores.">
+    <meta name="theme-color" content="#f0883e">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%230d1117'/><text x='8' y='72' font-size='56' font-family='monospace' fill='%23f0883e' font-weight='700'>TS</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="print.css" media="print">
+    <meta property="og:title" content="TakStud — Gestão Educacional">
+    <meta property="og:description" content="Sistema de gestão educacional com autenticação, RBAC via RLS do Supabase e atualizações em tempo real.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://non-s.github.io/TakStud/">
+    <meta property="og:image" content="https://non-s.github.io/TakStud/icon.svg">
+    <meta name="twitter:card" content="summary">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -24,6 +34,7 @@
             <input class="field" id="authPassword" type="password" placeholder="Senha"  autocomplete="current-password" />
             <button class="btn-save auth-btn" id="btnLogin">Entrar</button>
             <p class="auth-switch">Novo aqui? <button class="btn-link" id="btnShowRegister">Criar conta</button></p>
+            <p class="auth-switch"><button class="btn-link" id="btnShowForgot">Esqueceu sua senha?</button></p>
         </div>
 
         <!-- Cadastro -->
@@ -35,6 +46,23 @@
             <input class="field" id="regPassword" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password" />
             <button class="btn-save auth-btn" id="btnRegister">Criar conta</button>
             <p class="auth-switch">Já tem uma conta? <button class="btn-link" id="btnShowLogin">Entrar</button></p>
+        </div>
+
+        <!-- Recuperar senha -->
+        <div id="forgotSection" style="display:none">
+            <p class="auth-subtitle">Recuperar senha</p>
+            <p style="font-size:.85rem;color:#8b949e;margin-bottom:1rem">Enviaremos um link de redefinição para seu e-mail.</p>
+            <input class="field" id="forgotEmail" type="email" placeholder="E-mail da conta" autocomplete="email" />
+            <button class="btn-save auth-btn" id="btnForgot">Enviar link</button>
+            <p class="auth-switch"><button class="btn-link" id="btnBackToLogin">← Voltar ao login</button></p>
+        </div>
+
+        <!-- Nova senha (exibido após clicar no link do e-mail) -->
+        <div id="resetSection" style="display:none">
+            <p class="auth-subtitle">Nova senha</p>
+            <input class="field" id="newPassword" type="password" placeholder="Nova senha (mín. 6 caracteres)" autocomplete="new-password" />
+            <input class="field" id="confirmPassword" type="password" placeholder="Confirmar nova senha" autocomplete="new-password" />
+            <button class="btn-save auth-btn" id="btnResetPassword">Salvar nova senha</button>
         </div>
 
         <p class="auth-error" id="authError"></p>
@@ -183,5 +211,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});</script>
 </body>
 </html>

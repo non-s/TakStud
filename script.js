@@ -59,12 +59,32 @@ const setAuthErr  = msg => { document.getElementById('authError').textContent = 
 function showLoginSection() {
     document.getElementById('loginSection').style.display    = '';
     document.getElementById('registerSection').style.display = 'none';
+    document.getElementById('forgotSection').style.display   = 'none';
+    document.getElementById('resetSection').style.display    = 'none';
     setAuthErr('');
 }
 
 function showRegisterSection() {
     document.getElementById('loginSection').style.display    = 'none';
     document.getElementById('registerSection').style.display = '';
+    document.getElementById('forgotSection').style.display   = 'none';
+    document.getElementById('resetSection').style.display    = 'none';
+    setAuthErr('');
+}
+
+function showForgotSection() {
+    document.getElementById('loginSection').style.display    = 'none';
+    document.getElementById('registerSection').style.display = 'none';
+    document.getElementById('forgotSection').style.display   = '';
+    document.getElementById('resetSection').style.display    = 'none';
+    setAuthErr('');
+}
+
+function showResetSection() {
+    document.getElementById('loginSection').style.display    = 'none';
+    document.getElementById('registerSection').style.display = 'none';
+    document.getElementById('forgotSection').style.display   = 'none';
+    document.getElementById('resetSection').style.display    = '';
     setAuthErr('');
 }
 
@@ -114,12 +134,59 @@ async function register() {
     showLoginSection();
 }
 
+async function forgotPassword() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) return setAuthErr('Digite seu e-mail.');
+    const btn = document.getElementById('btnForgot');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href,
+    });
+    btn.disabled = false; btn.textContent = 'Enviar link';
+    if (error) {
+        setAuthErr(error.message);
+    } else {
+        const el = document.getElementById('authError');
+        el.style.color = '#2ea043';
+        el.textContent = 'Link enviado! Verifique seu e-mail.';
+    }
+}
+
+async function updatePassword() {
+    const pw1 = document.getElementById('newPassword').value;
+    const pw2 = document.getElementById('confirmPassword').value;
+    if (!pw1 || pw1.length < 6) return setAuthErr('A senha deve ter pelo menos 6 caracteres.');
+    if (pw1 !== pw2) return setAuthErr('As senhas não coincidem.');
+    const btn = document.getElementById('btnResetPassword');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const { error } = await sb.auth.updateUser({ password: pw1 });
+    btn.disabled = false; btn.textContent = 'Salvar nova senha';
+    if (error) {
+        setAuthErr(error.message);
+    } else {
+        const el = document.getElementById('authError');
+        el.style.color = '#2ea043';
+        el.textContent = 'Senha alterada! Fazendo login...';
+        setTimeout(showLoginSection, 1800);
+    }
+}
+
+function printView() {
+    window.print();
+}
+
 async function logout() {
     await sb.auth.signOut();
 }
 
 /* ─── Máquina de estados de autenticação ─────────────────────────────────── */
 sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+        authOverlay().style.display = 'flex';
+        showResetSection();
+        return;
+    }
+
     if (!session) {
         state.profile = null;
         authOverlay().style.display = 'flex';
@@ -438,6 +505,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnShowRegister').addEventListener('click', showRegisterSection);
     document.getElementById('btnShowLogin').addEventListener('click', showLoginSection);
     document.getElementById('btnLogout').addEventListener('click', logout);
+    document.getElementById('btnShowForgot').addEventListener('click', showForgotSection);
+    document.getElementById('btnBackToLogin').addEventListener('click', showLoginSection);
+    document.getElementById('btnForgot').addEventListener('click', forgotPassword);
+    document.getElementById('btnResetPassword').addEventListener('click', updatePassword);
+    document.getElementById('forgotEmail').addEventListener('keydown', e => { if (e.key === 'Enter') forgotPassword(); });
+    document.getElementById('newPassword').addEventListener('keydown', e => { if (e.key === 'Enter') updatePassword(); });
+    document.getElementById('confirmPassword').addEventListener('keydown', e => { if (e.key === 'Enter') updatePassword(); });
 
     /* Tecla Enter no formulário de login */
     ['authEmail','authPassword'].forEach(id =>
@@ -451,6 +525,13 @@ document.addEventListener('DOMContentLoaded', () => {
     exportBtn.style.display = 'none';
     exportBtn.addEventListener('click', exportData);
     document.querySelector('.topbar-user').prepend(exportBtn);
+
+    const printBtn = document.createElement('button');
+    printBtn.className = 'btn-export';
+    printBtn.innerHTML = '<i class="fas fa-print"></i> Imprimir';
+    printBtn.title = 'Imprimir / exportar PDF';
+    printBtn.addEventListener('click', printView);
+    document.querySelector('.topbar-user').prepend(printBtn);
 
     /* Navegação */
     document.querySelectorAll('.nav-item').forEach(btn =>

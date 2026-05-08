@@ -1,0 +1,42 @@
+@media print {
+    .auth-overlay, .modal, header.topbar, aside.sidebar,
+    .btn-add, .task-del, .btn-icon-sm, .btn-cancel,
+    .btn-save, .btn-logout, .btn-export, .filter-btn,
+    .search-bar { display: none !important; }
+
+    body { background: #fff !important; color: #111 !important; font-family: Arial, sans-serif; }
+
+    .layout { display: block !important; }
+
+    .content { padding: 0 !important; margin: 0 !important; }
+
+    .view { display: none !important; }
+    .view.active { display: block !important; }
+
+    .view-header h1 { font-size: 1.4rem; border-bottom: 2px solid #111; padding-bottom: .4rem; margin-bottom: 1rem; }
+    .breadcrumb { display: none; }
+
+    .stats-grid { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-bottom: 1rem; }
+    .stat-card { border: 1px solid #ccc !important; background: #f9f9f9 !important; border-radius: 6px; padding: .6rem; }
+    .stat-num { color: #111 !important; font-size: 1.4rem !important; }
+    .stat-label { color: #555 !important; font-size: .75rem !important; }
+
+    .task-item { border: 1px solid #ddd; border-radius: 6px; padding: .5rem .8rem; margin-bottom: .4rem; background: #fff !important; }
+    .task-title { color: #111 !important; }
+    .task-meta { color: #555 !important; font-size: .8rem; }
+
+    .notice-item { border: 1px solid #ddd; border-radius: 6px; padding: .6rem .8rem; margin-bottom: .5rem; background: #fff !important; }
+    .notice-title { color: #111 !important; }
+    .notice-content { color: #333 !important; }
+
+    .data-table { border-collapse: collapse; width: 100%; }
+    .data-table th, .data-table td { border: 1px solid #ccc; padding: .4rem .6rem; color: #111 !important; }
+    .data-table th { background: #eee !important; }
+
+    .sch-header, .sch-time, .sch-cell { border: 1px solid #ccc; padding: .3rem .5rem; color: #111 !important; }
+    .sch-subject { color: #111 !important; }
+
+    a { color: #111 !important; text-decoration: none; }
+
+    @page { margin: 1.5cm; }
+}
