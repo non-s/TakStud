@@ -7,6 +7,9 @@ const SUPABASE_URL      = 'https://bvquyfzllqnbfxncsacn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2cXV5ZnpsbHFuYmZ4bmNzYWNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxODU1MzQsImV4cCI6MjA5Mzc2MTUzNH0.xa_rs4bVLoTv58P7U8rDOaPjo1Dqt60q8cR-IWFpbug';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/** @constant {Object} ROLES - Role name constants to avoid magic strings throughout the codebase */
+const ROLES = { ADMIN: 'admin', TEACHER: 'teacher', STUDENT: 'student' };
+
 
 /* ─── RBAC — espelhado no banco via Row Level Security ──────────────────── */
 const RBAC = {
@@ -86,6 +89,28 @@ function showResetSection() {
     document.getElementById('forgotSection').style.display   = 'none';
     document.getElementById('resetSection').style.display    = '';
     setAuthErr('');
+}
+
+
+/**
+ * Centralizes Supabase/JS error handling: shows user-facing toast + logs to console.
+ * @param {Error|Object} err - Error from Supabase destructuring or caught exception.
+ * @param {string} [context='Operação'] - Label for the failed operation.
+ */
+function handleError(err, context = 'Operação') {
+  const msg = err?.message || String(err) || 'Erro inesperado';
+  console.error('[handleError]', context, err);
+  toast(msg, 'error');
+}
+
+
+/**
+ * Returns true only if every provided string is non-empty after trimming.
+ * @param {...string} values
+ * @returns {boolean}
+ */
+function validateRequired(...values) {
+  return values.every(v => typeof v === 'string' && v.trim().length > 0);
 }
 
 async function login() {
