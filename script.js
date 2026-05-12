@@ -122,7 +122,7 @@ async function register() {
     }
 
     /* Cria escola + perfil em uma única transação RPC para evitar estado parcial */
-    const { error: rpcErr } = await sb.rpc('create_school_and_profile', {
+    const { error: rpcErr } = await sb.rpc('takstud_create_school_and_profile', {
         p_user_id:   data.user.id,
         p_full_name: name,
         p_school_name: school,
@@ -195,7 +195,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     }
 
     const { data: profile, error } = await sb
-        .from('profiles')
+        .from('takstud_profiles')
         .select('id, full_name, role, school_id')
         .eq('id', session.user.id)
         .single();
@@ -266,14 +266,14 @@ function showView(view) {
 
 /* ─── Camada de dados (todo acesso vai ao Postgres via Supabase REST) ─────── */
 async function loadStudents() {
-    const { data, error } = await sb.from('students')
+    const { data, error } = await sb.from('takstud_students')
         .select('*').eq('school_id', state.profile.school_id).order('name');
     if (error) { toast('Erro ao carregar alunos.', 'error'); return []; }
     return data;
 }
 
 async function loadTasks() {
-    const { data, error } = await sb.from('tasks')
+    const { data, error } = await sb.from('takstud_tasks')
         .select('*').eq('school_id', state.profile.school_id)
         .order('created_at', { ascending: false });
     if (error) { toast('Erro ao carregar tarefas.', 'error'); return []; }
@@ -281,7 +281,7 @@ async function loadTasks() {
 }
 
 async function loadNotices() {
-    const { data, error } = await sb.from('notices')
+    const { data, error } = await sb.from('takstud_notices')
         .select('*').eq('school_id', state.profile.school_id)
         .order('created_at', { ascending: false });
     if (error) { toast('Erro ao carregar avisos.', 'error'); return []; }
@@ -372,7 +372,7 @@ async function renderSchedule() {
     const grid = document.getElementById('scheduleGrid');
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#8b949e">Carregando...</div>';
 
-    const { data: rows } = await sb.from('schedules')
+    const { data: rows } = await sb.from('takstud_schedules')
         .select('*')
         .eq('school_id', state.profile.school_id)
         .order('sort_order').order('time_slot');
@@ -409,7 +409,7 @@ async function renderSchedule() {
 
 async function deleteScheduleRow(id) {
     if (!confirm('Remover este horário?')) return;
-    await sb.from('schedules').delete().eq('id', id);
+    await sb.from('takstud_schedules').delete().eq('id', id);
     renderSchedule();
     toast('Horário removido.', 'warn');
 }
@@ -445,9 +445,9 @@ async function saveScheduleRow() {
     };
 
     if (editId) {
-        await sb.from('schedules').update(payload).eq('id', editId);
+        await sb.from('takstud_schedules').update(payload).eq('id', editId);
     } else {
-        await sb.from('schedules').insert(payload);
+        await sb.from('takstud_schedules').insert(payload);
     }
     closeModal('scheduleModal');
     renderSchedule();
@@ -460,7 +460,7 @@ const closeModal     = id => document.getElementById(id).classList.remove('open'
 const closeAllModals = () => document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
 
 async function openEditStudent(id) {
-    const { data: s } = await sb.from('students').select('*').eq('id', id).single();
+    const { data: s } = await sb.from('takstud_students').select('*').eq('id', id).single();
     if (!s) return;
     state.editingStudentId = id;
     document.getElementById('sName').value  = s.name;
@@ -479,12 +479,12 @@ async function saveStudent() {
     if (!cls)  return toast('Turma é obrigatória.', 'error');
 
     if (state.editingStudentId) {
-        const { error } = await sb.from('students')
+        const { error } = await sb.from('takstud_students')
             .update({ name, cls, email }).eq('id', state.editingStudentId);
         if (error) return toast('Erro ao atualizar: ' + error.message, 'error');
         toast('Aluno atualizado.');
     } else {
-        const { error } = await sb.from('students')
+        const { error } = await sb.from('takstud_students')
             .insert({ name, cls, email, school_id: state.profile.school_id });
         if (error) return toast('Erro ao salvar: ' + error.message, 'error');
         toast('Aluno adicionado.');
@@ -496,7 +496,7 @@ async function saveStudent() {
 
 async function deleteStudent(id) {
     if (!confirm('Excluir este aluno?')) return;
-    const { error } = await sb.from('students').delete().eq('id', id);
+    const { error } = await sb.from('takstud_students').delete().eq('id', id);
     if (error) return toast('Erro ao excluir.', 'error');
     renderStudents();
     renderDashboard();
@@ -507,7 +507,7 @@ async function saveTask() {
     const title   = document.getElementById('tTitle').value.trim();
     const subject = document.getElementById('tSubject').value.trim();
     if (!title) return toast('Título é obrigatório.', 'error');
-    const { error } = await sb.from('tasks').insert({
+    const { error } = await sb.from('takstud_tasks').insert({
         title, subject,
         due_date:    document.getElementById('tDue').value || null,
         description: document.getElementById('tDesc').value.trim(),
@@ -523,15 +523,15 @@ async function saveTask() {
 }
 
 async function toggleTask(id) {
-    const { data: t } = await sb.from('tasks').select('done').eq('id', id).single();
+    const { data: t } = await sb.from('takstud_tasks').select('done').eq('id', id).single();
     if (!t) return;
-    await sb.from('tasks').update({ done: !t.done }).eq('id', id);
+    await sb.from('takstud_tasks').update({ done: !t.done }).eq('id', id);
     renderTasks();
     renderDashboard();
 }
 
 async function deleteTask(id) {
-    await sb.from('tasks').delete().eq('id', id);
+    await sb.from('takstud_tasks').delete().eq('id', id);
     renderTasks();
     renderDashboard();
     toast('Tarefa removida.', 'warn');
@@ -542,7 +542,7 @@ async function saveNotice() {
     const content = document.getElementById('nContent').value.trim();
     if (!title)   return toast('Título é obrigatório.', 'error');
     if (!content) return toast('Conteúdo é obrigatório.', 'error');
-    const { error } = await sb.from('notices').insert({
+    const { error } = await sb.from('takstud_notices').insert({
         title, content, school_id: state.profile.school_id,
     });
     if (error) return toast('Erro ao publicar.', 'error');
@@ -554,7 +554,7 @@ async function saveNotice() {
 }
 
 async function deleteNotice(id) {
-    await sb.from('notices').delete().eq('id', id);
+    await sb.from('takstud_notices').delete().eq('id', id);
     renderNotices();
     renderDashboard();
     toast('Aviso removido.', 'warn');
