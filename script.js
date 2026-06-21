@@ -277,14 +277,14 @@ const sb = {
 const ROLES = { ADMIN: 'admin', TEACHER: 'teacher', STUDENT: 'student' };
 
 
-/* â”€â”€â”€ RBAC â€” espelhado no servidor via Firebase Security Rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── RBAC — espelhado no servidor via Firebase Security Rules ──────────── */
 const RBAC = {
     teacher: { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true,  canExport: false },
     student: { views: ['dashboard','tasks','notices'],                       canWrite: false, canExport: false },
     admin:   { views: ['dashboard','students','tasks','notices','schedule'], canWrite: true,  canExport: true  },
 };
 
-/* â”€â”€â”€ Estado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Estado ─────────────────────────────────────────────────────────────── */
 const state = {
     profile:          null,   // { id, full_name, role, school_id }
     taskFilter:       'all',
@@ -292,25 +292,25 @@ const state = {
     editingStudentId: null,
 };
 
-/* â”€â”€â”€ HorÃ¡rios (dados estÃ¡ticos, sem necessidade de banco) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Horários (dados estáticos, sem necessidade de banco) ──────────────── */
 const SCHEDULE = [
-    { time:'07:00', mon:'MatemÃ¡tica', tue:'PortuguÃªs',   wed:'HistÃ³ria',   thu:'CiÃªncias',   fri:'Ed. FÃ­sica'  },
-    { time:'08:00', mon:'PortuguÃªs',  tue:'MatemÃ¡tica',  wed:'CiÃªncias',   thu:'MatemÃ¡tica', fri:'Artes'       },
-    { time:'09:00', mon:'HistÃ³ria',   tue:'CiÃªncias',    wed:'MatemÃ¡tica', thu:'PortuguÃªs',  fri:'InglÃªs'      },
-    { time:'10:30', mon:'CiÃªncias',   tue:'HistÃ³ria',    wed:'InglÃªs',     thu:'HistÃ³ria',   fri:'MatemÃ¡tica'  },
-    { time:'11:30', mon:'InglÃªs',     tue:'Ed. FÃ­sica',  wed:'PortuguÃªs',  thu:'Artes',      fri:'PortuguÃªs'   },
+    { time:'07:00', mon:'Matemática', tue:'Português',   wed:'História',   thu:'Ciências',   fri:'Ed. Física'  },
+    { time:'08:00', mon:'Português',  tue:'Matemática',  wed:'Ciências',   thu:'Matemática', fri:'Artes'       },
+    { time:'09:00', mon:'História',   tue:'Ciências',    wed:'Matemática', thu:'Português',  fri:'Inglês'      },
+    { time:'10:30', mon:'Ciências',   tue:'História',    wed:'Inglês',     thu:'História',   fri:'Matemática'  },
+    { time:'11:30', mon:'Inglês',     tue:'Ed. Física',  wed:'Português',  thu:'Artes',      fri:'Português'   },
 ];
 
-/* â”€â”€â”€ UtilitÃ¡rios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Utilitários ────────────────────────────────────────────────────────── */
 const formatDate  = d => { if (!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
 const debounce    = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-/* XSS: toda string do usuÃ¡rio escrita em innerHTML passa por aqui */
+/* XSS: toda string do usuário escrita em innerHTML passa por aqui */
 const esc = s => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/* â”€â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
 let toastTimer;
 function toast(msg, type = 'success') {
     let el = document.getElementById('ts-toast');
@@ -321,7 +321,7 @@ function toast(msg, type = 'success') {
     toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-/* â”€â”€â”€ UI de AutenticaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── UI de Autenticação ─────────────────────────────────────────────────── */
 const authOverlay = () => document.getElementById('authOverlay');
 const setAuthErr  = msg => { document.getElementById('authError').textContent = msg; };
 
@@ -361,9 +361,9 @@ function showResetSection() {
 /**
  * Centralizes Firebase/JS error handling: shows user-facing toast + logs to console.
  * @param {Error|Object} err - Error from Firebase adapter or caught exception.
- * @param {string} [context='OperaÃ§Ã£o'] - Label for the failed operation.
+ * @param {string} [context='Operação'] - Label for the failed operation.
  */
-function handleError(err, context = 'OperaÃ§Ã£o') {
+function handleError(err, context = 'Operação') {
   const msg = err?.message || String(err) || 'Erro inesperado';
   console.error('[handleError]', context, err);
   toast(msg, 'error');
@@ -400,7 +400,7 @@ async function register() {
     const email    = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
     if (!name || !school || !email || !password) return setAuthErr('Preencha todos os campos.');
-    if (password.length < 6) return setAuthErr('A senha deve ter no mÃ­nimo 6 caracteres.');
+    if (password.length < 6) return setAuthErr('A senha deve ter no mínimo 6 caracteres.');
     setAuthErr('');
     const btn = document.getElementById('btnRegister');
     btn.disabled = true;
@@ -412,7 +412,7 @@ async function register() {
         return setAuthErr(error.message);
     }
 
-    /* Cria escola + perfil em uma Ãºnica transaÃ§Ã£o RPC para evitar estado parcial */
+    /* Cria escola + perfil em uma única transação RPC para evitar estado parcial */
     const { error: rpcErr } = await sb.rpc('takstud_create_school_and_profile', {
         p_user_id:   data.user.id,
         p_full_name: name,
@@ -447,7 +447,7 @@ async function updatePassword() {
     const pw1 = document.getElementById('newPassword').value;
     const pw2 = document.getElementById('confirmPassword').value;
     if (!pw1 || pw1.length < 6) return setAuthErr('A senha deve ter pelo menos 6 caracteres.');
-    if (pw1 !== pw2) return setAuthErr('As senhas nÃ£o coincidem.');
+    if (pw1 !== pw2) return setAuthErr('As senhas não coincidem.');
     const btn = document.getElementById('btnResetPassword');
     btn.disabled = true; btn.textContent = 'Salvando...';
     const { error } = await sb.auth.updateUser({ password: pw1 });
@@ -470,7 +470,7 @@ async function logout() {
     await sb.auth.signOut();
 }
 
-/* â”€â”€â”€ MÃ¡quina de estados de autenticaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Máquina de estados de autenticação ─────────────────────────────────── */
 sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
         authOverlay().style.display = 'flex';
@@ -493,7 +493,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
 
     if (error || !profile) {
         await sb.auth.signOut();
-        setAuthErr('Perfil nÃ£o encontrado. Confirme seu e-mail.');
+        setAuthErr('Perfil não encontrado. Confirme seu e-mail.');
         authOverlay().style.display = 'flex';
         return;
     }
@@ -509,7 +509,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     showView('dashboard');
 });
 
-/* â”€â”€â”€ Realtime â€” Firestore publica alteraÃ§Ãµes das coleÃ§Ãµes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Realtime — Firestore publica alterações das coleções ──────────────── */
 let realtimeChannel = null;
 function subscribeToChanges() {
     if (realtimeChannel) sb.removeChannel(realtimeChannel);
@@ -529,7 +529,7 @@ function subscribeToChanges() {
         .subscribe();
 }
 
-/* â”€â”€â”€ AplicaÃ§Ã£o do RBAC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Aplicação do RBAC ──────────────────────────────────────────────────── */
 function applyRBAC() {
     const p = RBAC[state.profile.role] ?? RBAC.student;
     document.querySelectorAll('.nav-item').forEach(btn => {
@@ -542,7 +542,7 @@ function applyRBAC() {
     if (exportBtn) exportBtn.style.display = p.canExport ? '' : 'none';
 }
 
-/* â”€â”€â”€ NavegaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Navegação ──────────────────────────────────────────────────────────── */
 function showView(view) {
     if (!state.profile) return;
     const p = RBAC[state.profile.role] ?? RBAC.student;
@@ -555,7 +555,7 @@ function showView(view) {
        notices: renderNotices, schedule: renderSchedule })[view]?.();
 }
 
-/* â”€â”€â”€ Camada de dados (todo acesso vai ao Firebase/Firestore) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Camada de dados (todo acesso vai ao Firebase/Firestore) ───────────── */
 async function loadStudents() {
     const { data, error } = await sb.from('takstud_students')
         .select('*').eq('school_id', state.profile.school_id).order('name');
@@ -579,7 +579,7 @@ async function loadNotices() {
     return data;
 }
 
-/* â”€â”€â”€ RenderizaÃ§Ãµes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Renderizações ──────────────────────────────────────────────────────── */
 async function renderDashboard() {
     const [students, tasks, notices] = await Promise.all([loadStudents(), loadTasks(), loadNotices()]);
     document.getElementById('statStudents').textContent = students.length;
@@ -606,13 +606,13 @@ async function renderStudents() {
         ? filtered.map(s => `<tr>
             <td>${esc(s.name)}</td>
             <td><span class="badge-class">${esc(s.cls)}</span></td>
-            <td>${esc(s.email || 'â€”')}</td>
+            <td>${esc(s.email || '—')}</td>
             <td>${canWrite
                 ? `<div class="td-actions">
                      <button class="btn-icon-sm edit" data-action="edit-student" data-id="${s.id}" title="Editar"><i class="fas fa-edit"></i></button>
                      <button class="btn-icon-sm"      data-action="del-student"  data-id="${s.id}" title="Excluir"><i class="fas fa-trash"></i></button>
                    </div>`
-                : 'â€”'}</td>
+                : '—'}</td>
           </tr>`).join('')
         : `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-users"></i><p>Nenhum aluno encontrado.</p></div></td></tr>`;
 }
@@ -673,14 +673,14 @@ async function renderSchedule() {
         wed: r.wed, thu: r.thu, fri: r.fri, sort_order: i,
     }));
 
-    const days = ['Segunda','TerÃ§a','Quarta','Quinta','Sexta'];
+    const days = ['Segunda','Terça','Quarta','Quinta','Sexta'];
     const keys = ['mon','tue','wed','thu','fri'];
 
     let html = '<div class="sch-header">Hora</div>';
     days.forEach(d => html += `<div class="sch-header">${d}</div>`);
 
     schedule.forEach(row => {
-        html += `<div class="sch-time">${esc(row.time_slot)}${canEdit && row.id ? `<button class="sch-del-btn" data-id="${row.id}" title="Remover linha" style="margin-left:.4rem;background:none;border:none;color:#f85149;cursor:pointer;font-size:.75rem">âœ•</button>` : ''}</div>`;
+        html += `<div class="sch-time">${esc(row.time_slot)}${canEdit && row.id ? `<button class="sch-del-btn" data-id="${row.id}" title="Remover linha" style="margin-left:.4rem;background:none;border:none;color:#f85149;cursor:pointer;font-size:.75rem">✕</button>` : ''}</div>`;
         keys.forEach(k => html += `<div class="sch-cell"><span class="sch-subject">${esc(row[k] || '')}</span></div>`);
     });
 
@@ -689,7 +689,7 @@ async function renderSchedule() {
     if (canEdit) {
         const addRow = document.createElement('div');
         addRow.style.cssText = 'grid-column:1/-1;padding:.5rem;display:flex;justify-content:flex-end';
-        addRow.innerHTML = `<button id="btnAddScheduleRow" class="btn-add" style="font-size:.82rem"><i class="fas fa-plus"></i> Adicionar HorÃ¡rio</button>`;
+        addRow.innerHTML = `<button id="btnAddScheduleRow" class="btn-add" style="font-size:.82rem"><i class="fas fa-plus"></i> Adicionar Horário</button>`;
         grid.after(addRow);
         document.getElementById('btnAddScheduleRow')?.addEventListener('click', () => openScheduleModal(null, schedule.length));
 
@@ -699,10 +699,10 @@ async function renderSchedule() {
 }
 
 async function deleteScheduleRow(id) {
-    if (!confirm('Remover este horÃ¡rio?')) return;
+    if (!confirm('Remover este horário?')) return;
     await sb.from('takstud_schedules').delete().eq('id', id);
     renderSchedule();
-    toast('HorÃ¡rio removido.', 'warn');
+    toast('Horário removido.', 'warn');
 }
 
 function openScheduleModal(existing = null, order = 0) {
@@ -722,7 +722,7 @@ async function saveScheduleRow() {
     const editId    = document.getElementById('scheduleModal').dataset.editId;
     const sortOrder = Number(document.getElementById('scheduleModal').dataset.sortOrder);
     const time_slot = document.getElementById('schTime').value.trim();
-    if (!time_slot) return toast('HorÃ¡rio Ã© obrigatÃ³rio.', 'error');
+    if (!time_slot) return toast('Horário é obrigatório.', 'error');
 
     const payload = {
         time_slot,
@@ -742,10 +742,10 @@ async function saveScheduleRow() {
     }
     closeModal('scheduleModal');
     renderSchedule();
-    toast('HorÃ¡rio salvo.');
+    toast('Horário salvo.');
 }
 
-/* â”€â”€â”€ Modais â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Modais ─────────────────────────────────────────────────────────────── */
 const openModal      = id => document.getElementById(id).classList.add('open');
 const closeModal     = id => document.getElementById(id).classList.remove('open');
 const closeAllModals = () => document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
@@ -761,13 +761,13 @@ async function openEditStudent(id) {
     openModal('studentModal');
 }
 
-/* â”€â”€â”€ CRUD (escritas rejeitadas pelas rules se o perfil nÃ£o tiver permissÃ£o) */
+/* ─── CRUD (escritas rejeitadas pelas rules se o perfil não tiver permissão) */
 async function saveStudent() {
     const name  = document.getElementById('sName').value.trim();
     const cls   = document.getElementById('sClass').value.trim();
     const email = document.getElementById('sEmail').value.trim();
-    if (!name) return toast('Nome Ã© obrigatÃ³rio.', 'error');
-    if (!cls)  return toast('Turma Ã© obrigatÃ³ria.', 'error');
+    if (!name) return toast('Nome é obrigatório.', 'error');
+    if (!cls)  return toast('Turma é obrigatória.', 'error');
 
     if (state.editingStudentId) {
         const { error } = await sb.from('takstud_students')
@@ -797,7 +797,7 @@ async function deleteStudent(id) {
 async function saveTask() {
     const title   = document.getElementById('tTitle').value.trim();
     const subject = document.getElementById('tSubject').value.trim();
-    if (!title) return toast('TÃ­tulo Ã© obrigatÃ³rio.', 'error');
+    if (!title) return toast('Título é obrigatório.', 'error');
     const { error } = await sb.from('takstud_tasks').insert({
         title, subject,
         due_date:    document.getElementById('tDue').value || null,
@@ -831,8 +831,8 @@ async function deleteTask(id) {
 async function saveNotice() {
     const title   = document.getElementById('nTitle').value.trim();
     const content = document.getElementById('nContent').value.trim();
-    if (!title)   return toast('TÃ­tulo Ã© obrigatÃ³rio.', 'error');
-    if (!content) return toast('ConteÃºdo Ã© obrigatÃ³rio.', 'error');
+    if (!title)   return toast('Título é obrigatório.', 'error');
+    if (!content) return toast('Conteúdo é obrigatório.', 'error');
     const { error } = await sb.from('takstud_notices').insert({
         title, content, school_id: state.profile.school_id,
     });
@@ -851,7 +851,7 @@ async function deleteNotice(id) {
     toast('Aviso removido.', 'warn');
 }
 
-/* â”€â”€â”€ Exportar JSON (somente admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Exportar JSON (somente admin) ─────────────────────────────────────── */
 async function exportData() {
     const [students, tasks, notices] = await Promise.all([loadStudents(), loadTasks(), loadNotices()]);
     const payload = { students, tasks, notices, school_id: state.profile.school_id, exportedAt: new Date().toISOString() };
@@ -864,9 +864,9 @@ async function exportData() {
     toast('Dados exportados.');
 }
 
-/* â”€â”€â”€ InicializaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Inicialização ──────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-    /* BotÃµes de autenticaÃ§Ã£o */
+    /* Botões de autenticação */
     document.getElementById('btnLogin').addEventListener('click', login);
     document.getElementById('btnRegister').addEventListener('click', register);
     document.getElementById('btnShowRegister').addEventListener('click', showRegisterSection);
@@ -880,11 +880,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('newPassword').addEventListener('keydown', e => { if (e.key === 'Enter') updatePassword(); });
     document.getElementById('confirmPassword').addEventListener('keydown', e => { if (e.key === 'Enter') updatePassword(); });
 
-    /* Tecla Enter no formulÃ¡rio de login */
+    /* Tecla Enter no formulário de login */
     ['authEmail','authPassword'].forEach(id =>
         document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
 
-    /* BotÃ£o de exportar (inserido na topbar, visÃ­vel apenas para admin) */
+    /* Botão de exportar (inserido na topbar, visível apenas para admin) */
     const exportBtn = document.createElement('button');
     exportBtn.id        = 'exportBtn';
     exportBtn.className = 'btn-export';
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
     printBtn.addEventListener('click', printView);
     document.querySelector('.topbar-user').prepend(printBtn);
 
-    /* NavegaÃ§Ã£o */
+    /* Navegação */
     document.querySelectorAll('.nav-item').forEach(btn =>
         btn.addEventListener('click', () => showView(btn.dataset.view)));
 
@@ -956,7 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.modal').forEach(m =>
         m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
 
-    /* Modal de horÃ¡rio */
+    /* Modal de horário */
     document.getElementById('closeScheduleModal')?.addEventListener('click', () => closeModal('scheduleModal'));
     document.getElementById('saveScheduleRow')?.addEventListener('click', saveScheduleRow);
 
