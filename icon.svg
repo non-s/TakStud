@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">TakStud</title>
+  <desc id="desc">Education dashboard icon.</desc>
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+  <path d="M88 186 256 96l168 90-168 90-168-90z" fill="#38bdf8"/>
+  <path d="M160 242v82c0 40 43 72 96 72s96-32 96-72v-82l-96 51-96-51z" fill="#f8fafc"/>
+  <path d="M424 186v130" stroke="#38bdf8" stroke-width="22" stroke-linecap="round"/>
+</svg>
+
