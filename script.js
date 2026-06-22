@@ -74,6 +74,27 @@ function byField(field, ascending = true) {
     };
 }
 
+const CACHE_KEYS_BY_COLLECTION = {
+    takstud_students: 'students',
+    takstud_tasks: 'tasks',
+    takstud_notices: 'notices',
+    takstud_schedules: 'schedules',
+};
+
+const DATA_LIMITS = {
+    students: 1000,
+    tasks: 300,
+    notices: 150,
+    schedules: 80,
+};
+
+const CACHE_SORTERS = {
+    students: byField('name'),
+    tasks: byField('created_at', false),
+    notices: byField('created_at', false),
+    schedules: (a, b) => byField('sort_order')(a, b) || byField('time_slot')(a, b),
+};
+
 class FirebaseQuery {
     constructor(table) {
         this.collectionName = TABLE_COLLECTIONS[table] || table;
@@ -272,8 +293,28 @@ const sb = {
             subscribe() {
                 this.unsubscribers = listeners.map(({ collectionName, callback }) => {
                     if (!state.profile?.school_id) return () => {};
-                    const q = query(collection(firestore, collectionName), where('school_id', '==', state.profile.school_id));
-                    return onSnapshot(q, () => callback());
+                    const cacheKey = CACHE_KEYS_BY_COLLECTION[collectionName];
+                    const constraints = [where('school_id', '==', state.profile.school_id)];
+                    if (cacheKey === 'students') constraints.push(firestoreOrderBy('name', 'asc'), firestoreLimit(DATA_LIMITS.students));
+                    if (cacheKey === 'tasks') constraints.push(firestoreOrderBy('created_at', 'desc'), firestoreLimit(DATA_LIMITS.tasks));
+                    if (cacheKey === 'notices') constraints.push(firestoreOrderBy('created_at', 'desc'), firestoreLimit(DATA_LIMITS.notices));
+                    if (cacheKey === 'schedules') {
+                        constraints.push(
+                            firestoreOrderBy('sort_order', 'asc'),
+                            firestoreOrderBy('time_slot', 'asc'),
+                            firestoreLimit(DATA_LIMITS.schedules),
+                        );
+                    }
+                    const q = query(collection(firestore, collectionName), ...constraints);
+                    return onSnapshot(
+                        q,
+                        snapshot => callback({
+                            collectionName,
+                            cacheKey,
+                            data: snapshot.docs.map(snapshotToRecord),
+                        }),
+                        error => callback({ collectionName, cacheKey, error }),
+                    );
                 });
                 return this;
             },
@@ -303,6 +344,12 @@ const state = {
     taskFilter:       'all',
     studentSearch:    '',
     editingStudentId: null,
+    cache: {
+        students: null,
+        tasks: null,
+        notices: null,
+        schedules: null,
+    },
 };
 
 /* ─── Horários (dados estáticos, sem necessidade de banco) ──────────────── */
@@ -317,6 +364,48 @@ const SCHEDULE = [
 /* ─── Utilitários ────────────────────────────────────────────────────────── */
 const formatDate  = d => { if (!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
 const debounce    = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+function clearDataCache() {
+    Object.keys(state.cache).forEach(key => { state.cache[key] = null; });
+}
+
+function invalidateCache(key) {
+    if (key in state.cache) state.cache[key] = null;
+}
+
+function cacheRecords(key, records = []) {
+    const sorter = CACHE_SORTERS[key];
+    const limitCount = DATA_LIMITS[key] || records.length;
+    state.cache[key] = [...records].sort(sorter).slice(0, limitCount);
+}
+
+function activeViewName() {
+    return document.querySelector('.view.active')?.id?.replace('view-', '') || 'dashboard';
+}
+
+const pendingRealtimeKeys = new Set();
+
+function flushRealtimeRender() {
+    const active = activeViewName();
+    const keys = new Set(pendingRealtimeKeys);
+    pendingRealtimeKeys.clear();
+    if (active === 'dashboard') {
+        renderDashboard();
+        return;
+    }
+    if (keys.has('students') && active === 'students') renderStudents();
+    if (keys.has('tasks') && active === 'tasks') renderTasks();
+    if (keys.has('notices') && active === 'notices') renderNotices();
+    if (keys.has('schedules') && active === 'schedule') renderSchedule();
+    renderDashboard();
+}
+
+const debouncedRealtimeRender = debounce(flushRealtimeRender, 80);
+
+function queueRealtimeRender(key) {
+    pendingRealtimeKeys.add(key);
+    debouncedRealtimeRender();
+}
 
 /* XSS: toda string do usuário escrita em innerHTML passa por aqui */
 const esc = s => String(s ?? '')
@@ -492,7 +581,12 @@ sb.auth.onAuthStateChange(async (event, session) => {
     }
 
     if (!session) {
+        if (realtimeChannel) {
+            sb.removeChannel(realtimeChannel);
+            realtimeChannel = null;
+        }
         state.profile = null;
+        clearDataCache();
         authOverlay().style.display = 'flex';
         showLoginSection();
         return;
@@ -524,21 +618,26 @@ sb.auth.onAuthStateChange(async (event, session) => {
 
 /* ─── Realtime — Firestore publica alterações das coleções ──────────────── */
 let realtimeChannel = null;
+
+function handleRealtimeCollection({ collectionName, cacheKey, data, error }) {
+    if (error) {
+        console.error('[realtime]', collectionName, error);
+        toast('Conexao em tempo real instavel. Tentando recuperar...', 'warn');
+        invalidateCache(cacheKey);
+        return;
+    }
+    if (!cacheKey) return;
+    cacheRecords(cacheKey, data);
+    queueRealtimeRender(cacheKey);
+}
+
 function subscribeToChanges() {
     if (realtimeChannel) sb.removeChannel(realtimeChannel);
     realtimeChannel = sb.channel('db-changes')
-        .on('firestore_changes', { table: 'students' }, () => {
-            renderStudents();
-            renderDashboard();
-        })
-        .on('firestore_changes', { table: 'tasks' }, () => {
-            renderTasks();
-            renderDashboard();
-        })
-        .on('firestore_changes', { table: 'notices' }, () => {
-            renderNotices();
-            renderDashboard();
-        })
+        .on('firestore_changes', { table: 'students' }, handleRealtimeCollection)
+        .on('firestore_changes', { table: 'tasks' }, handleRealtimeCollection)
+        .on('firestore_changes', { table: 'notices' }, handleRealtimeCollection)
+        .on('firestore_changes', { table: 'schedules' }, handleRealtimeCollection)
         .subscribe();
 }
 
@@ -570,26 +669,43 @@ function showView(view) {
 
 /* ─── Camada de dados (todo acesso vai ao Firebase/Firestore) ───────────── */
 async function loadStudents() {
+    if (state.cache.students) return state.cache.students;
     const { data, error } = await sb.from('takstud_students')
-        .select('*').eq('school_id', state.profile.school_id).order('name');
+        .select('*').eq('school_id', state.profile.school_id).order('name').limit(DATA_LIMITS.students);
     if (error) { toast('Erro ao carregar alunos.', 'error'); return []; }
-    return data;
+    cacheRecords('students', data);
+    return state.cache.students;
 }
 
 async function loadTasks() {
+    if (state.cache.tasks) return state.cache.tasks;
     const { data, error } = await sb.from('takstud_tasks')
         .select('*').eq('school_id', state.profile.school_id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }).limit(DATA_LIMITS.tasks);
     if (error) { toast('Erro ao carregar tarefas.', 'error'); return []; }
-    return data;
+    cacheRecords('tasks', data);
+    return state.cache.tasks;
 }
 
 async function loadNotices() {
+    if (state.cache.notices) return state.cache.notices;
     const { data, error } = await sb.from('takstud_notices')
         .select('*').eq('school_id', state.profile.school_id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }).limit(DATA_LIMITS.notices);
     if (error) { toast('Erro ao carregar avisos.', 'error'); return []; }
-    return data;
+    cacheRecords('notices', data);
+    return state.cache.notices;
+}
+
+async function loadSchedules() {
+    if (state.cache.schedules) return state.cache.schedules;
+    const { data, error } = await sb.from('takstud_schedules')
+        .select('*')
+        .eq('school_id', state.profile.school_id)
+        .order('sort_order').order('time_slot').limit(DATA_LIMITS.schedules);
+    if (error) { toast('Erro ao carregar horários.', 'error'); return []; }
+    cacheRecords('schedules', data);
+    return state.cache.schedules;
 }
 
 /* ─── Renderizações ──────────────────────────────────────────────────────── */
@@ -676,10 +792,7 @@ async function renderSchedule() {
     const grid = document.getElementById('scheduleGrid');
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#8b949e">Carregando...</div>';
 
-    const { data: rows } = await sb.from('takstud_schedules')
-        .select('*')
-        .eq('school_id', state.profile.school_id)
-        .order('sort_order').order('time_slot');
+    const rows = await loadSchedules();
 
     const schedule = rows?.length ? rows : SCHEDULE.map((r, i) => ({
         id: null, time_slot: r.time, mon: r.mon, tue: r.tue,
@@ -699,8 +812,10 @@ async function renderSchedule() {
 
     grid.innerHTML = html;
 
+    document.getElementById('scheduleActions')?.remove();
     if (canEdit) {
         const addRow = document.createElement('div');
+        addRow.id = 'scheduleActions';
         addRow.style.cssText = 'grid-column:1/-1;padding:.5rem;display:flex;justify-content:flex-end';
         addRow.innerHTML = `<button id="btnAddScheduleRow" class="btn-add" style="font-size:.82rem"><i class="fas fa-plus"></i> Adicionar Horário</button>`;
         grid.after(addRow);
@@ -713,7 +828,9 @@ async function renderSchedule() {
 
 async function deleteScheduleRow(id) {
     if (!confirm('Remover este horário?')) return;
-    await sb.from('takstud_schedules').delete().eq('id', id);
+    const { error } = await sb.from('takstud_schedules').delete().eq('id', id);
+    if (error) return toast('Erro ao remover horário.', 'error');
+    invalidateCache('schedules');
     renderSchedule();
     toast('Horário removido.', 'warn');
 }
@@ -749,10 +866,13 @@ async function saveScheduleRow() {
     };
 
     if (editId) {
-        await sb.from('takstud_schedules').update(payload).eq('id', editId);
+        const { error } = await sb.from('takstud_schedules').update(payload).eq('id', editId);
+        if (error) return toast('Erro ao salvar horário.', 'error');
     } else {
-        await sb.from('takstud_schedules').insert(payload);
+        const { error } = await sb.from('takstud_schedules').insert(payload);
+        if (error) return toast('Erro ao salvar horário.', 'error');
     }
+    invalidateCache('schedules');
     closeModal('scheduleModal');
     renderSchedule();
     toast('Horário salvo.');
@@ -793,6 +913,7 @@ async function saveStudent() {
         if (error) return toast('Erro ao salvar: ' + error.message, 'error');
         toast('Aluno adicionado.');
     }
+    invalidateCache('students');
     closeModal('studentModal');
     renderStudents();
     renderDashboard();
@@ -802,6 +923,7 @@ async function deleteStudent(id) {
     if (!confirm('Excluir este aluno?')) return;
     const { error } = await sb.from('takstud_students').delete().eq('id', id);
     if (error) return toast('Erro ao excluir.', 'error');
+    invalidateCache('students');
     renderStudents();
     renderDashboard();
     toast('Aluno removido.', 'warn');
@@ -819,6 +941,7 @@ async function saveTask() {
         school_id:   state.profile.school_id,
     });
     if (error) return toast('Erro ao salvar tarefa.', 'error');
+    invalidateCache('tasks');
     ['tTitle','tSubject','tDue','tDesc'].forEach(id => document.getElementById(id).value = '');
     closeModal('taskModal');
     renderTasks();
@@ -829,13 +952,17 @@ async function saveTask() {
 async function toggleTask(id) {
     const { data: t } = await sb.from('takstud_tasks').select('done').eq('id', id).single();
     if (!t) return;
-    await sb.from('takstud_tasks').update({ done: !t.done }).eq('id', id);
+    const { error } = await sb.from('takstud_tasks').update({ done: !t.done }).eq('id', id);
+    if (error) return toast('Erro ao atualizar tarefa.', 'error');
+    invalidateCache('tasks');
     renderTasks();
     renderDashboard();
 }
 
 async function deleteTask(id) {
-    await sb.from('takstud_tasks').delete().eq('id', id);
+    const { error } = await sb.from('takstud_tasks').delete().eq('id', id);
+    if (error) return toast('Erro ao excluir tarefa.', 'error');
+    invalidateCache('tasks');
     renderTasks();
     renderDashboard();
     toast('Tarefa removida.', 'warn');
@@ -850,6 +977,7 @@ async function saveNotice() {
         title, content, school_id: state.profile.school_id,
     });
     if (error) return toast('Erro ao publicar.', 'error');
+    invalidateCache('notices');
     ['nTitle','nContent'].forEach(id => document.getElementById(id).value = '');
     closeModal('noticeModal');
     renderNotices();
@@ -858,7 +986,9 @@ async function saveNotice() {
 }
 
 async function deleteNotice(id) {
-    await sb.from('takstud_notices').delete().eq('id', id);
+    const { error } = await sb.from('takstud_notices').delete().eq('id', id);
+    if (error) return toast('Erro ao excluir aviso.', 'error');
+    invalidateCache('notices');
     renderNotices();
     renderDashboard();
     toast('Aviso removido.', 'warn');
