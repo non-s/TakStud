@@ -21,6 +21,7 @@ const requiredFiles = [
   "robots.txt",
   "scripts/check-html-assets.js",
   "scripts/check-repo-contracts.js",
+  "scripts/check-takstud-production.js",
   "scripts/check-workflows.js",
   "scripts/validate-firebase-config.js",
   "sitemap.xml",
@@ -58,7 +59,13 @@ if (exists("sitemap.xml")) {
 
 if (exists(".github/workflows/quality.yml")) {
   const quality = read(".github/workflows/quality.yml");
-  for (const token of ["check-workflows.js", "validate-firebase-config.js", "check-html-assets.js", "check-repo-contracts.js"]) {
+  for (const token of [
+    "check-workflows.js",
+    "validate-firebase-config.js",
+    "check-takstud-production.js",
+    "check-html-assets.js",
+    "check-repo-contracts.js",
+  ]) {
     if (!quality.includes(token)) failures.push(`quality workflow must run ${token}`);
   }
 }
