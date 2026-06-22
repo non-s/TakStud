@@ -20,7 +20,9 @@ import {
     doc,
     getDoc,
     getDocs,
+    limit as firestoreLimit,
     onSnapshot,
+    orderBy as firestoreOrderBy,
     query,
     serverTimestamp,
     setDoc,
@@ -80,6 +82,7 @@ class FirebaseQuery {
         this.mode = 'select';
         this.payload = null;
         this.expectSingle = false;
+        this.limitCount = null;
     }
 
     select() {
@@ -94,6 +97,11 @@ class FirebaseQuery {
 
     order(field, options = {}) {
         this.orders.push({ field, ascending: options.ascending !== false });
+        return this;
+    }
+
+    limit(count) {
+        this.limitCount = count;
         return this;
     }
 
@@ -148,6 +156,10 @@ class FirebaseQuery {
             let constraints = this.filters
                 .filter(filter => filter.field !== 'id')
                 .map(filter => where(filter.field, '==', filter.value));
+            this.orders.forEach(order => {
+                constraints.push(firestoreOrderBy(order.field, order.ascending ? 'asc' : 'desc'));
+            });
+            if (this.limitCount) constraints.push(firestoreLimit(this.limitCount));
             let snapshots;
             const idFilter = this.filters.find(filter => filter.field === 'id');
             if (idFilter) {
@@ -161,6 +173,7 @@ class FirebaseQuery {
             for (const order of [...this.orders].reverse()) {
                 data = data.sort(byField(order.field, order.ascending));
             }
+            if (this.limitCount) data = data.slice(0, this.limitCount);
 
             return { data: this.expectSingle ? (data[0] || null) : data, error: null };
         } catch (error) {
